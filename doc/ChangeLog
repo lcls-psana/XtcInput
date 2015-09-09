@@ -11,6 +11,13 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-16
+2015-09-09 David Schneider
+- Changes to how psana processes input files:
+  Remove one-stream feature JIRA PSAS-185
+  For XtcInput, only process first dataset spec, or list of files
+- general refactors JIRA PSAS-186
+
 Tag: V00-10-15
 2015-05-28 David Schneider
 - fix bug with evicting streams JIRA Issue PSAS-154

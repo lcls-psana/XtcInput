@@ -179,14 +179,6 @@ public:
 
 };
 
-/// Error generated when multiple live directories are specified
-class LiveDirError : public Exception {
-public:
-
-  LiveDirError(const ErrSvc::Context& ctx)
-    : Exception(ctx, "LiveDirError", "only one live data directory is supported") {}
-
-};
 
 /// Error generated when incorrect or conflicting live streams are specified
 class LiveStreamError : public Exception {
@@ -197,12 +189,37 @@ public:
 
 };
 
+class DeprecatedFeature : public Exception {
+public:
+
+ DeprecatedFeature(const ErrSvc::Context& ctx, const std::string &feature)
+    : Exception(ctx, "DeprecatedFeature", feature) {}
+
+};
+
 /// Exception thrown when dataset specification does not produce any files
 class NoFilesInDataset : public Exception {
 public:
 
     NoFilesInDataset(const ErrSvc::Context& ctx, const std::string& ds)
     : Exception( ctx, "NoFilesInDataset", "Dataset has no files, check dataset specification: '" + ds + "'") {}
+
+};
+
+/// Exception thrown when dataset specification does not produce any files
+class NoRunsInDataset : public Exception {
+public:
+
+    NoRunsInDataset(const ErrSvc::Context& ctx, const std::string& ds)
+    : Exception( ctx, "NoRunsInDataset", "Dataset specifies no run or runs, check dataset specification: '" + ds + "'") {}
+
+};
+/// Exception thrown when dataset specification does not produce any files
+class MixedSmallInDataset : public Exception {
+public:
+
+    MixedSmallInDataset(const ErrSvc::Context& ctx, const std::string& ds)
+    : Exception( ctx, "MixedSmallInDataset", "Dataset includes smalldata and non-smalldata files: '" + ds + "'") {}
 
 };
 

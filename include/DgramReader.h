@@ -27,6 +27,7 @@
 //-------------------------------
 #include "XtcInput/MergeMode.h"
 #include "XtcInput/XtcFilesPosition.h"
+#include "XtcInput/RunFileIterI.h"
 
 //------------------------------------
 // Collaborating Class Declarations --
@@ -108,6 +109,8 @@ public:
 protected:
 
 private:
+
+  void moveDgramsThroughQueue(boost::shared_ptr<RunFileIterI> runFileIter);
 
   // Data members
   FileList m_files ;

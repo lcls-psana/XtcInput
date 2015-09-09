@@ -48,18 +48,17 @@ namespace XtcInput {
 //----------------
 // Constructors --
 //----------------
-StreamFileIterLive::StreamFileIterLive (unsigned expNum, unsigned run, int stream, const IData::Dataset::Streams& ds_streams,
+  StreamFileIterLive::StreamFileIterLive (unsigned expNum, unsigned run, const std::set<unsigned> & streamsFilter,
                                         unsigned liveTimeout, unsigned runLiveTimeout, const boost::shared_ptr<LiveFilesDB>& filesdb)
   : StreamFileIterI()
   , m_expNum(expNum)
   , m_run(run)
-  , m_stream(stream)
-  , m_ds_streams(ds_streams)
   , m_liveTimeout(liveTimeout)
   , m_runLiveTimeout(runLiveTimeout)
   , m_filesdb(filesdb)
   , m_initialized(false)
-  , m_lastStream(0)
+  , m_lastStream(-1)
+  , m_streamsFilter(streamsFilter)
 {
 }
 
@@ -96,122 +95,73 @@ StreamFileIterLive::next()
         files = m_filesdb->files(m_expNum, m_run);
       } while (files.empty() and std::time(0) < t0 + m_runLiveTimeout);
     }
+
     if (files.empty()) {
       throw ErrDbRunLiveData(ERR_LOC, m_run);
     }
 
-    if (not files.empty()) {
-
-      // wait for some time until at least one file appears on disk
-      std::time_t t0 = std::time(0);
-      bool found = false;
-      while (not found) {
-        for (std::vector<XtcFileName>::const_iterator it = files.begin(); it != files.end(); ++ it) {
-
-          const std::string path = it->path();
-          const std::string inprog_path = path + ".inprogress";
-
-          if (access(inprog_path.c_str(), R_OK) == 0) {
-            MsgLog(logger, debug, "Found file on disk: " << inprog_path);
-            found = true;
-            break;
-          } else if (access(path.c_str(), R_OK) == 0) {
-            MsgLog(logger, debug, "Found file on disk: " << path);
-            found = true;
-            break;
-          }
-        }
-        if (std::time(0) > t0 + m_liveTimeout) break;
-        // sleep for one second and repeat
-        if (not found) {
-          MsgLog(logger, debug, "Wait 1 sec for files to appear on disk");
-          sleep(1);
+    // wait for some time until at least one file appears on disk
+    std::time_t t0 = std::time(0);
+    bool found = false;
+    while (not found) {
+      for (std::vector<XtcFileName>::const_iterator it = files.begin(); it != files.end(); ++ it) {
+        
+        const std::string path = it->path();
+        const std::string inprog_path = path + ".inprogress";
+        
+        if (access(inprog_path.c_str(), R_OK) == 0) {
+          MsgLog(logger, debug, "Found file on disk: " << inprog_path);
+          found = true;
+          break;
+        } else if (access(path.c_str(), R_OK) == 0) {
+          MsgLog(logger, debug, "Found file on disk: " << path);
+          found = true;
+          break;
         }
       }
-
-      if (found) {
-        // first time we may received incomplete list, update it now
-        std::vector<XtcFileName> files = m_filesdb->files(m_expNum, m_run);
-
-        // copy stream numbers from the list
-        for (std::vector<XtcFileName>::const_iterator it = files.begin(); it != files.end(); ++ it) {
-          MsgLog(logger, debug, "Found stream " << it->stream());
-          m_streams.insert(it->stream());
-        }
-
-      } else {
-        MsgLog(logger, error, "No files appeared on disk after timeout");
-        throw XTCLiveTimeout(ERR_LOC, files[0].path(), m_liveTimeout);
+      if (std::time(0) > t0 + m_liveTimeout) break;
+      // sleep for one second and repeat
+      if (not found) {
+        MsgLog(logger, debug, "Wait 1 sec for files to appear on disk");
+        sleep(1);
       }
+    }
 
-      // filter unwanted streams
-      if (not m_streams.empty() and m_stream != -1) {
-
-        if (m_stream == -3) {
-
-          // evict streams which do not fall into any range in the dataset specification
-          Streams::iterator s_it = m_streams.begin();
-          while (s_it != m_streams.end()) {
-            bool evict = true ;
-            for (IData::Dataset::Streams::const_iterator ds_s_it = m_ds_streams.begin(); ds_s_it != m_ds_streams.end(); ++ ds_s_it) {
-              if (ds_s_it->first <= *s_it && *s_it <= ds_s_it->second) {
-                evict = false;
-                break;
-              }
-            }
-            if (evict) {
-              MsgLog(logger, debug, "Stream filtering mode, excluding stream number: " << *s_it);
-              Streams::iterator toErase = s_it;
-              ++s_it;
-              m_streams.erase(toErase);
-            } else {
-              ++s_it;
-            }
-          }
-
+    if (found) {
+      // insertion of chunk 0 files (the streams) associated with a run into the database 
+      // may not be atomic. Now that a file has appeared on disk, update our list.
+      // Assumption is that complete list of streams is available one a file shows up on disk.
+      std::vector<XtcFileName> files = m_filesdb->files(m_expNum, m_run);
+      
+      // copy stream numbers from the list
+      for (std::vector<XtcFileName>::const_iterator it = files.begin(); it != files.end(); ++ it) {
+        if ((m_streamsFilter.size()==0) or (m_streamsFilter.find(it->stream()) != m_streamsFilter.end())) {
+          MsgLog(logger, debug, "Found stream to process: " << it->stream());
+          m_streamsToProcess.insert(it->stream());
         } else {
-
-          Streams::iterator it;
-          if (m_stream == -2) {
-            // leave one stream only, try to randomize but in a reproducible way
-            unsigned idx = m_run % m_streams.size();
-            it = m_streams.begin();
-            std::advance(it, idx);
-          } else {
-            // leave one specific stream
-            it = m_streams.find(m_stream);
-          }
-      
-          if (it == m_streams.end()) {
-            m_streams.clear();
-            MsgLog(logger, debug, "One-stream mode, no matching streams");
-          } else {
-            m_streams.erase(m_streams.begin(), it);
-            m_streams.erase(++it, m_streams.end());
-            MsgLog(logger, debug, "One-stream mode, stream number: " << *m_streams.begin());
-          }
-
+          MsgLog(logger, debug, "Found stream " << it->stream() << " but it is filtered out. Not processing");
         }
-
-      } // if (not m_streams.empty())
-      
-    } // if (not files.empty())
+      }  
+    } else {
+      MsgLog(logger, error, "No files appeared on disk after timeout");
+      throw XTCLiveTimeout(ERR_LOC, files[0].path(), m_liveTimeout);
+    }
 
   } // if (not m_initialized)
 
 
-  if (not m_streams.empty()) {
-    Streams::iterator s = m_streams.begin();
+  if (not m_streamsToProcess.empty()) {
+    std::set<unsigned>::iterator s = m_streamsToProcess.begin();
     m_lastStream = *s;
     next = boost::make_shared<ChunkFileIterLive>(m_expNum, m_run, m_lastStream, m_liveTimeout, m_filesdb);
-    m_streams.erase(s);
+    m_streamsToProcess.erase(s);
   }
 
   return next;
 }
 
 /**
- *  @brief Return stream number for the set of files returned from last next() call.
+ *  @brief Return stream number for the set of files returned from last next() call, or -1 if next() not called yet.
  */
 unsigned
 StreamFileIterLive::stream() const

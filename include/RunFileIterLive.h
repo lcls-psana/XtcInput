@@ -64,8 +64,7 @@ public:
    *  @param[in] begin     Iterator pointing to the beginning of run number sequence
    *  @param[in] end       Iterator pointing to the end of run number sequence
    *  @param[in] expNum    Experiment number
-   *  @param[in] stream    Stream number, or -1 for all stream, -2 for any one stream, -3 for ranges of streams
-   *  @param[in] ds_streams Arnges of streams
+   *  @param[in] streamsFilter A ranges of streams (empty means all streams)
    *  @param[in] liveTimeout Specifies timeout in second when reading live data
    *  @param[in] runLiveTimeout Specifies timeout in second when waiting for a new run to show in the database when reading live data
    *  @param[in] dbConnStr Database connection string
@@ -74,13 +73,15 @@ public:
    *  @param[in] small     look for small data files
    */
   template <typename Iter>
-    RunFileIterLive (Iter begin, Iter end, unsigned expNum, int stream, const IData::Dataset::Streams& ds_streams, unsigned liveTimeout, unsigned runLiveTimeout,
-                     const std::string& dbConnStr, const std::string& table, const std::string& dir, bool small)
+    RunFileIterLive (Iter begin, Iter end, unsigned expNum, 
+                     const std::set<unsigned> &streamsFilter, 
+                     unsigned liveTimeout, unsigned runLiveTimeout,
+                     const std::string& dbConnStr, const std::string& table, 
+                     const std::string& dir, bool small)
     : RunFileIterI()
     , m_runs(begin, end)
     , m_expNum(expNum)
-    , m_stream(stream)
-    , m_ds_streams(ds_streams)
+    , m_streamsFilter(streamsFilter)
     , m_liveTimeout(liveTimeout)
     , m_runLiveTimeout(runLiveTimeout)
     , m_run(0)
@@ -111,8 +112,7 @@ private:
   
   Runs m_runs;
   unsigned m_expNum;
-  int m_stream;
-  IData::Dataset::Streams m_ds_streams;
+  std::set<unsigned> m_streamsFilter;
   unsigned m_liveTimeout;
   unsigned m_runLiveTimeout;
   unsigned m_run;
