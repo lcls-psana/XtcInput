@@ -11,6 +11,11 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-17
+2015-09-17 David Schneider
+- Add building blocks for upcoming liveAvail feature (JIRA PSAS-184)
+- presently not used, should not change anything
+	
 Tag: V00-10-16
 2015-09-09 David Schneider
 - Changes to how psana processes input files:

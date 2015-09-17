@@ -226,11 +226,18 @@ public:
 /// XTC exception for invalid extent size
 class XTCExtentException : public Exception {
 public:
-
+ 
   XTCExtentException(const ErrSvc::Context& ctx, const std::string& fileName, size_t offset, uint32_t extent)
     : Exception(ctx, "XTCExtentException", "Invalid XTC extent size in file " + fileName +
         ": offset=" + boost::lexical_cast<std::string>(offset) +
         ", extent=" + boost::lexical_cast<std::string>(extent)) {}
+};
+
+class NotSorted : public Exception {
+public:
+
+  NotSorted(const ErrSvc::Context& ctx) 
+    : Exception(ctx, "NotSorted", "") {}
 
 };
 
