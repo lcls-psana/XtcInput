@@ -77,10 +77,10 @@ public:
   // get base name
   std::string basename() const ;
 
-  // get base name for large xtc version of file (will be the same if not small)
+  // get base name for large xtc version of file (will be the same as basename() if not small)
   std::string largeBasename() const ;
 
-  // get base name for smalldata version of the xtc file (will be the same if small)
+  // get base name for smalldata version of the xtc file (will be the same as basename() if small)
   std::string smallBasename() const ;
 
   // get file extension, anything that appears after last '.' in file name including '.' itself

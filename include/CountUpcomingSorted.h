@@ -38,6 +38,7 @@ namespace XtcInput {
   class CountUpcomingSorted {
   public:
     CountUpcomingSorted(Functor &functor) : m_functor(functor) {};
+
     unsigned afterUpTo(T startAfterThis, unsigned maxToCount) {
       while ((m_cache.size()>0) and                 \
              (m_cache.front() < startAfterThis)) {

@@ -43,10 +43,21 @@ std::vector<off_t> L1AcceptOffsetsFollowing(int fd, off_t offset, int maxToCount
 class L1AcceptOffsetsFollowingFunctor {
 
 public:
-  L1AcceptOffsetsFollowingFunctor(int fd, boost::shared_ptr<FileIO::FileIO_I> fileIO) :
-    m_fd(fd), m_fileIO(fileIO) {};
+
+  L1AcceptOffsetsFollowingFunctor(int fd, boost::shared_ptr<FileIO::FileIO_I> fileIO) 
+    :  m_fd(fd)
+    , m_fileIO(fileIO)
+  {
+  };
+
+  L1AcceptOffsetsFollowingFunctor & operator=(const L1AcceptOffsetsFollowingFunctor &other) {
+    m_fd = other.m_fd;
+    m_fileIO = other.m_fileIO;
+    return *this;
+  }
+ 
   std::vector<off_t> operator()(off_t offset, int maxToCount) {
-   return L1AcceptOffsetsFollowing(m_fd, offset, maxToCount, *m_fileIO);
+    return L1AcceptOffsetsFollowing(m_fd, offset, maxToCount, *m_fileIO);
   }
 
 private:

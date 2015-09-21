@@ -11,6 +11,10 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-18
+2015-09-21 David Schneider
+- Final class for upcoming liveAvail feature (JIRA PSAS-184)
+
 Tag: V00-10-17
 2015-09-17 David Schneider
 - Add building blocks for upcoming liveAvail feature (JIRA PSAS-184)
