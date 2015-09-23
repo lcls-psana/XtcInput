@@ -31,6 +31,8 @@
 #include "XtcInput/XtcStreamDgIter.h"
 #include "XtcInput/XtcFileName.h"
 #include "XtcInput/XtcFilesPosition.h"
+#include "XtcInput/StreamAvail.h"
+#include "XtcInput/MutexLock.h"
 
 //------------------------------------
 // Collaborating Class Declarations --
@@ -95,6 +97,8 @@ public:
    */
   Dgram next() ;
 
+  unsigned countAvailDgramsStopAt(unsigned maxToCount);
+
 protected:
 
   // update time in datagram
@@ -148,6 +152,10 @@ private:
 
   typedef std::priority_queue<StreamDgram, std::vector<StreamDgram>, StreamDgramGreater> OutputQueue;
   OutputQueue m_outputQueue;                  ///< Output queue for datagrams
+  StreamAvail m_streamAvail;
+
+  // synchronize calls to next from reader thread and countAvailDgramsStopAt from analysis thread
+  boost::mutex m_protect; 
 };
 
 } // namespace XtcInput

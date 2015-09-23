@@ -170,7 +170,7 @@ XtcStreamDgIter::readAhead()
         // advance chunk file if need be
         while (xtcFilesNotEqual(m_dgiter->path(), xtcFileForThirdDgram)) {
           MsgLog(logger,debug,"third datagram jump, jmpFile != currentFile - "
-		 << xtcFileForThirdDgram << " != " << m_dgiter->path());
+                 << xtcFileForThirdDgram << " != " << m_dgiter->path());
           // get next file name
           const XtcFileName& file = m_chunkIter->next();
           
@@ -284,4 +284,28 @@ XtcStreamDgIter::queueHeader(const boost::shared_ptr<DgHeader>& header)
     
 }
 
+boost::shared_ptr<DgHeader> XtcStreamDgIter::latestDgHeaderInQueue() {
+  if (m_headerQueue.size()==0) {
+    return boost::shared_ptr<DgHeader>();
+  }
+  boost::shared_ptr<DgHeader> latest = m_headerQueue.front();
+  // DVD REMOVE
+  //  MsgLog(logger, info, "XtcStreamDgIter::latestDgHeaderInQueue front path=" << latest->path() << " offset=" << latest->offset());
+  int latestChunk = latest->path().chunk();
+  for (HeaderQueue::iterator it = m_headerQueue.begin(); it != m_headerQueue.end(); ++it) {
+    int thisChunk = (*it)->path().chunk();
+    if (thisChunk > latestChunk) {
+      latest = *it;
+    } else if (thisChunk == latestChunk) {
+      if ((*it)->offset() > latest->offset()) {
+        latest = *it;
+      }
+    }
+  }
+  // DVD REMOVE
+  //  MsgLog(logger, info, "XtcStreamDgIter::latestDgHeaderInQueue latest path=" << latest->path() << " offset=" << latest->offset());
+  return latest;
+}
+  
 } // namespace XtcInput
+

@@ -51,7 +51,7 @@ RunFileIterLive::next()
 {
   boost::shared_ptr<StreamFileIterI> next;
   if (not m_runs.empty()) {
-    Runs::iterator s = m_runs.begin();
+    std::set<unsigned>::iterator s = m_runs.begin();
     m_run = *s;
     next = boost::make_shared<StreamFileIterLive>(m_expNum, m_run, m_streamsFilter, 
                                                   m_liveTimeout, m_runLiveTimeout, m_filesdb);

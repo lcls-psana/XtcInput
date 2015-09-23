@@ -28,6 +28,7 @@
 #include "XtcInput/MergeMode.h"
 #include "XtcInput/XtcFilesPosition.h"
 #include "XtcInput/RunFileIterI.h"
+#include "XtcInput/LiveAvail.h"
 
 //------------------------------------
 // Collaborating Class Declarations --
@@ -64,12 +65,13 @@ public:
   // full constructor with parameters for handling control streams and optionally
   // specifies file offsets before the second event (event after configure).
   template <typename Iter>
-  DgramReader(Iter begin, Iter end, DgramQueue& queue, MergeMode mode,
-      const std::string& liveDbConn, const std::string& liveTable, unsigned liveTimeout,
-              unsigned runLiveTimeout,
-              double l1OffsetSec, int firstControlStream, unsigned maxStreamClockDiffSec,
-              boost::shared_ptr<XtcFilesPosition> thirdEvent = 
-	                                          boost::shared_ptr<XtcFilesPosition>())
+    DgramReader(Iter begin, Iter end, DgramQueue& queue, 
+                boost::shared_ptr<XtcInput::LiveAvail> &liveAvail,
+                MergeMode mode, const std::string& liveDbConn, const std::string& liveTable, 
+                unsigned liveTimeout, unsigned runLiveTimeout, double l1OffsetSec, 
+                int firstControlStream, unsigned maxStreamClockDiffSec,
+                boost::shared_ptr<XtcFilesPosition> thirdEvent = 
+                                boost::shared_ptr<XtcFilesPosition>())
     : m_files(begin, end)
     , m_queue( queue )
     , m_mode( mode )
@@ -81,6 +83,7 @@ public:
     , m_firstControlStream(firstControlStream)
     , m_maxStreamClockDiffSec(maxStreamClockDiffSec)
     , m_thirdEvent(thirdEvent)
+    , m_liveAvail(liveAvail)
   {}
 
   // constructor with default parameters for parameters for handling control streams
@@ -110,7 +113,7 @@ protected:
 
 private:
 
-  void moveDgramsThroughQueue(boost::shared_ptr<RunFileIterI> runFileIter);
+  void moveDgramsThroughQueue(boost::shared_ptr<RunFileIterI> runFileIter, bool liveMode);
 
   // Data members
   FileList m_files ;
@@ -125,6 +128,7 @@ private:
   int m_firstControlStream;
   unsigned m_maxStreamClockDiffSec;
   boost::shared_ptr<XtcFilesPosition> m_thirdEvent;
+  boost::shared_ptr<XtcInput::LiveAvail> &m_liveAvail;
 };
 
 } // namespace XtcInput

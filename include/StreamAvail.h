@@ -40,7 +40,8 @@ class StreamAvail {
 
  public:
   
-  StreamAvail(boost::shared_ptr<FileIO::FileIO_I> fileIO);
+  StreamAvail(boost::shared_ptr<FileIO::FileIO_I> fileIO = 
+              boost::shared_ptr<FileIO::FileIO_I>((FileIO::FileIO_I *)(NULL)));
 
   unsigned countUpTo(const XtcFileName &xtcFileName, off_t offset, unsigned maxToCount);
 

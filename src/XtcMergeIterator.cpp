@@ -72,29 +72,29 @@ XtcMergeIterator::next()
 {
   Dgram dgram;
   while (not dgram.dg()) {
-
+    
     if (not m_dgiter) {
-
+      
       // get next file name
       boost::shared_ptr<StreamFileIterI> fileNameIter = m_runIter->next();
-
+      
       boost::shared_ptr<XtcFilesPosition> xtcFilesPos;
       if (m_firstRun) {
-	m_firstRun = false;
-	if (m_thirdEvent) {
-	  if (unsigned(m_thirdEvent->run()) != m_runIter->run()) {
-	    MsgLog(logger, error, "run mismatch: thirdEvent.run=" 
-		   << m_thirdEvent->run()
-		   << " != runIter.run=" << m_runIter->run());
-	    throw JumpToDifferentRun(ERR_LOC);
-	  }
-	  xtcFilesPos = m_thirdEvent;
-	}
+        m_firstRun = false;
+        if (m_thirdEvent) {
+          if (unsigned(m_thirdEvent->run()) != m_runIter->run()) {
+            MsgLog(logger, error, "run mismatch: thirdEvent.run=" 
+                   << m_thirdEvent->run()
+                   << " != runIter.run=" << m_runIter->run());
+            throw JumpToDifferentRun(ERR_LOC);
+          }
+          xtcFilesPos = m_thirdEvent;
+        }
       }
-
+      
       // if no more files then stop
       if (not fileNameIter) break ;
-
+      
       // open next xtc file if there is none open
       MsgLog(logger, trace, "processing run #" << m_runIter->run()) ;
       m_dgiter = boost::make_shared<XtcStreamMerger>(fileNameIter, m_l1OffsetSec, 
@@ -102,17 +102,23 @@ XtcMergeIterator::next()
                                                      m_maxStreamClockDiffSec,
                                                      xtcFilesPos);
     }
-
+    
     // try to read next datagram from it
     dgram = m_dgiter->next() ;
-
+    
     // if failed to read go to next file
     if (not dgram.dg()) m_dgiter.reset();
 
   }
-
+  
   return dgram ;
-
+  
+}
+  
+bool XtcMergeIterator::availEventsIsAtLeast(unsigned numEvents) {
+  if (not m_dgiter) return false;
+  unsigned count = m_dgiter->countAvailDgramsStopAt(numEvents);
+  return count >= numEvents;
 }
 
 } // namespace XtcInput

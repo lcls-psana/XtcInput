@@ -19,6 +19,7 @@
 // Collaborating Class Headers --
 //-------------------------------
 #include "XtcInput/Exceptions.h"
+#include "MsgLogger/MsgLogger.h"
 
 namespace XtcInput {
 
@@ -43,23 +44,34 @@ namespace XtcInput {
       while ((m_cache.size()>0) and                 \
              (m_cache.front() < startAfterThis)) {
         m_cache.pop_front();
+        MsgLog("CountUpcomingSorted", debug, "CountUpcomingSorted: removed element from cache. m_cache.size()=" 
+               << m_cache.size() << " startAfter=" << startAfterThis);
       }
       if ((m_cache.size()>0) and (m_cache.front() != startAfterThis)) {
+        MsgLog("CountUpcomingSorted", debug, "CountUpcomingSorted: clearing cache");
         m_cache.clear();
       }
-      unsigned amountInCache = m_cache.size();
-      if ((amountInCache > 0) and (m_cache.size()>0) and (m_cache.front() == startAfterThis)) {
-        amountInCache -= 1;
-      }
-      if (amountInCache >= maxToCount) return maxToCount;
 
-      T functorStart = startAfterThis;
-      if (amountInCache > 0) {
-        functorStart = m_cache.back();
-      }
+      // at this point, either m_cache is empty, or it starts with startAfterThis
+      if (m_cache.size()==0) m_cache.push_back(startAfterThis);
+      unsigned amountInCache = m_cache.size() - 1;
+      T functorStart = m_cache.back();
+
+      if (amountInCache >= maxToCount) return maxToCount;
 
       std::vector<T> newValues = m_functor(functorStart, maxToCount - amountInCache);
 
+      checkIsSorted(newValues);
+
+      m_cache.insert(m_cache.end(), newValues.begin(), newValues.end());
+      
+      MsgLog("CountUpcomingSorted", debug, "Got " << newValues.size() << " new values. cacheStart=" << m_cache.front() << " cacheBack: " << m_cache.back());
+
+      return newValues.size() + amountInCache;
+    }
+
+  protected:
+    void checkIsSorted(const std::vector<T> &newValues) {
       bool isSorted = true;
       for (unsigned pos = 1; pos < newValues.size(); ++pos) {
         if (newValues.at(pos) < newValues.at(pos-1)) {
@@ -67,14 +79,10 @@ namespace XtcInput {
           break;
         }
       }
-        
+      
       if (not isSorted) {
         throw NotSorted(ERR_LOC);
       }
-
-      m_cache.insert(m_cache.end(), newValues.begin(), newValues.end());
-
-      return newValues.size() + amountInCache;
     }
 
   private:

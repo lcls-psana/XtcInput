@@ -123,6 +123,13 @@ public:
    */
   Dgram next() ;
 
+  /**
+   * @brief returns the last DgHeader in the queue
+   *
+   * 
+   */
+  boost::shared_ptr<DgHeader> latestDgHeaderInQueue();
+
 protected:
 
 private:

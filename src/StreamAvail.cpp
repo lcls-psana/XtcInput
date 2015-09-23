@@ -17,15 +17,20 @@
 //-----------------
 // C/C++ Headers --
 //-----------------
+#include "boost/make_shared.hpp"
 
 //-------------------------------
 // Collaborating Class Headers --
 //-------------------------------
 #include "MsgLogger/MsgLogger.h"
+#include "FileIO/StdFileIO.h"
 
 //-----------------------------------------------------------------------
 // Local Macros, Typedefs, Structures, Unions and Forward Declarations --
 //-----------------------------------------------------------------------
+
+#define TRACEMSG trace
+#define DEBUGMSG debug
 
 namespace {
 
@@ -45,11 +50,23 @@ namespace {
     std::string inProgress = notInprogress + ".inprogress";
     int fid = fileIO.open(inProgress.c_str(), O_RDONLY | O_LARGEFILE);
     if (fid < 0) {
-      return fileIO.open(notInprogress.c_str(), O_RDONLY | O_LARGEFILE);
+      fid = fileIO.open(notInprogress.c_str(), O_RDONLY | O_LARGEFILE);
+      if (fid >= 0) {
+        MsgLog(logger, TRACEMSG, "Opened file descriptor " << fid << " for " << notInprogress);
+      }
+    } else {
+      MsgLog(logger, TRACEMSG, "Opened file descriptor " << fid << " for " << inProgress);
     }
     return fid;
   }
 
+  bool notInProgressExists(const XtcInput::XtcFileName &xtcFname, FileIO::FileIO_I &fileIO) {
+    std::string notInprogress = stripInProgress(xtcFname);
+    int fid = fileIO.open(notInprogress.c_str(), O_RDONLY | O_LARGEFILE);
+    bool result = fid >= 0;
+    if (result) fileIO.close(fid);
+    return result;
+  }
   std::string getDir(const XtcInput::XtcFileName & xtc) {
     size_t baseLen = xtc.basename().size();
     std::string res = xtc.path();
@@ -67,13 +84,16 @@ namespace XtcInput {
 StreamAvail::StreamAvail(boost::shared_ptr<FileIO::FileIO_I> fileIO) :
   m_fileIO(fileIO)
 {
+  if (not m_fileIO) {
+    m_fileIO = boost::make_shared<FileIO::StdFileIO>();
+  }
 }
 
 StreamAvail::~StreamAvail()
 {
   for (unsigned idx = 0; idx < m_openFileDescriptors.size(); ++idx) {
     int res = m_fileIO->close(m_openFileDescriptors[idx]);
-    MsgLog(logger, trace, "closed fd=" << m_openFileDescriptors[idx] << " return code=" << res);
+    MsgLog(logger, TRACEMSG, "closed fd=" << m_openFileDescriptors[idx] << " return code=" << res);
   }
   m_openFileDescriptors.clear();
 }
@@ -94,7 +114,7 @@ unsigned StreamAvail::countUpTo(const XtcFileName &xtcFileName, off_t offset, un
   }
   ChunkCounter &counter = m_streamChunk2counter.find(streamChunk)->second;
   unsigned availThisChunk = counter.afterUpTo(offset, maxToCount);
-  if (availThisChunk < maxToCount) {
+  if ((availThisChunk < maxToCount) and notInProgressExists(xtcFileName, *m_fileIO)) {
     std::pair<unsigned, unsigned> streamNextChunk(xtcFileName.stream(), 1 + xtcFileName.chunk());
     if (m_streamChunk2counter.find(streamNextChunk) == m_streamChunk2counter.end()) {
       XtcFileName nextXtc = XtcFileName(getDir(xtcFileName),
@@ -105,7 +125,7 @@ unsigned StreamAvail::countUpTo(const XtcFileName &xtcFileName, off_t offset, un
                                         xtcFileName.small());
       int fid = tryToOpen(nextXtc, *m_fileIO);
       if (fid < 0) return availThisChunk;
-      MsgLog(logger, trace, "At chunk boundary. Counting available for " 
+      MsgLog(logger, TRACEMSG, "At chunk boundary. Counting available for " 
              << xtcFileName << ", will also try " << nextXtc);
       m_openFileDescriptors.push_back(fid);
       L1AcceptOffsetsFollowingFunctor nextCounter(fid, m_fileIO);
@@ -114,6 +134,7 @@ unsigned StreamAvail::countUpTo(const XtcFileName &xtcFileName, off_t offset, un
     ChunkCounter &nextCounter = m_streamChunk2counter.find(streamNextChunk)->second;
     return availThisChunk + nextCounter.afterUpTo(0, maxToCount - availThisChunk);
   }
+  MsgLog(logger, DEBUGMSG, "availThisChunk=" << availThisChunk);
   return availThisChunk;
 }
 

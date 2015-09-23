@@ -132,6 +132,8 @@ try {
 
   boost::shared_ptr<RunFileIterI> runFileIter;
 
+  m_liveAvail.reset();
+  bool liveMode = false;
   if (datasets.size()==1) {
     IData::Dataset ds(datasets.at(0));
     std::vector<unsigned> runNumbers = ds.runsAsList();
@@ -139,21 +141,21 @@ try {
       throw NoRunsInDataset(ERR_LOC, "");
     }
     if (ds.exists("one-stream")) {
-      MsgLog(logger, error, "one-stream has been deprecated. Use stream=k or read small data");
-      throw DeprecatedFeature(ERR_LOC, "one-stream");
+      throw DeprecatedFeature(ERR_LOC, "one-stream has been deprecated. Use stream=k or read small data");
     }
     // use default table name if none was given
     if (m_liveDbConn.empty()) m_liveDbConn = "Server=psdb.slac.stanford.edu;Database=regdb;Uid=regdb_reader";
     if (ds.exists("live")) {
-      std::vector<unsigned> streamsFilterAtVector = ds.streamsAsList();
-      std::set<unsigned> streamsFilter(streamsFilterAtVector.begin(), 
-                                       streamsFilterAtVector.end());
+      liveMode = true;
+      std::vector<unsigned> streamsFilterAsVector = ds.streamsAsList();
+      std::set<unsigned> streamsFilter(streamsFilterAsVector.begin(), 
+                                       streamsFilterAsVector.end());
       boost::shared_ptr<RunFileIterLive> 
-        temp(new RunFileIterLive(runNumbers.begin(), runNumbers.end(), 
-                                 ds.expID(), streamsFilter,
-                                 m_liveTimeout, m_runLiveTimeout, m_liveDbConn, 
-                                 m_liveTable, ds.dirName(), ds.exists("smd")));
-      runFileIter = temp;
+        runFileIterLive(new RunFileIterLive(runNumbers.begin(), runNumbers.end(),
+                                            ds.expID(), streamsFilter,
+                                            m_liveTimeout, m_runLiveTimeout, m_liveDbConn, 
+                                            m_liveTable, ds.dirName(), ds.exists("smd")));
+      runFileIter = runFileIterLive;
     } else {
       // dataset specified, but not live mode. 
       const IData::Dataset::NameList & datasetNameList = ds.files();
@@ -171,7 +173,7 @@ try {
   }
 
 
-  moveDgramsThroughQueue(runFileIter);
+  moveDgramsThroughQueue(runFileIter, liveMode);
   
 } catch (const boost::thread_interrupted& ex) {
 
@@ -188,12 +190,15 @@ try {
   
 }
   
-void DgramReader::moveDgramsThroughQueue(boost::shared_ptr<RunFileIterI> runFileIter) {
+  void DgramReader::moveDgramsThroughQueue(boost::shared_ptr<RunFileIterI> runFileIter, bool liveMode) {
 
   if (runFileIter) {
 
     XtcMergeIterator iter(runFileIter, m_l1OffsetSec, m_firstControlStream, 
                           m_maxStreamClockDiffSec, m_thirdEvent);
+    if (liveMode) {
+      m_liveAvail = boost::make_shared<XtcInput::LiveAvail>(&iter);
+    }
     Dgram dg;
     while ( not boost::this_thread::interruption_requested() ) {
       
@@ -212,11 +217,10 @@ void DgramReader::moveDgramsThroughQueue(boost::shared_ptr<RunFileIterI> runFile
     MsgLog(logger, warning, "no input data specified");
 
   }
-
+  if (liveMode) m_liveAvail->mergerAboutToBeDestroyed();
   // tell all we are done
   m_queue.push ( Dgram() ) ;
 }
-
-
+  
 } // namespace XtcInput
 

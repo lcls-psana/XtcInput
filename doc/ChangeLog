@@ -11,6 +11,17 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-19
+2015-09-23 David Schneider
+- final support for liveAvail feature in this package(JIRA PSAS-184)
+- fix bug and unit test from last checkins
+- change RunFileIterLive to work with set of runs rather than Runs/interval type
+- add MutexLock class so XtcStreamMerger can protect data used in both threads
+- add LiveAvail (high level interface to feature) & StreamAvail (does counting) classes
+- DgramReader - takes a reference to a LiveAvail shared pointer to set if in live mode
+- XtcStreamDgIter - returns latest dg in queue for feature
+- note, once reader thread destroys XtcStreamMerger, liveAvail always returns False	
+
 Tag: V00-10-18
 2015-09-21 David Schneider
 - Final class for upcoming liveAvail feature (JIRA PSAS-184)

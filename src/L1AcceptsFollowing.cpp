@@ -28,6 +28,7 @@
 // Local Macros, Typedefs, Structures, Unions and Forward Declarations --
 //-----------------------------------------------------------------------
 
+
 namespace {
 
   const char* logger = "XtcInput.L1AcceptsFollowing";
@@ -41,8 +42,7 @@ namespace XtcInput {
   std::vector<off_t> result;
   Pds::Dgram dgHeader;
   off_t fsize = fileIO.filesize(fd);
-
-  bool first = false;
+  bool first = true;
   off_t nextOffset = offset;
 
   while ((nextOffset + off_t(sizeof(Pds::Dgram)) <= fsize) and \
@@ -67,8 +67,8 @@ namespace XtcInput {
                (dgHeader.seq.service() == Pds::TransitionId::L1Accept)) {
       result.push_back(oldOffset);
     }
-    MsgLog(logger, debug, "prev=" << oldOffset << " next=" << nextOffset 
-           << " fsize=" << fsize << " result.size()=" << result.size());
+    MsgLog(logger, debug, "loop progress: oldOffset=" << oldOffset << " nextOffset=" << nextOffset 
+           << " filesize=" << fsize << " result.size()=" << result.size());
   }
   
   return result;

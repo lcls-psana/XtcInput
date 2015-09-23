@@ -81,6 +81,11 @@ public:
    */
   Dgram next() ;
 
+  /**
+   * return true if available events, outside the stream queues, is at least numEvents.
+   */
+  bool availEventsIsAtLeast(unsigned numEvents);
+
 protected:
 
 private:

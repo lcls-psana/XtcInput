@@ -108,16 +108,13 @@ protected:
 
 private:
 
-  typedef std::set<unsigned> Runs;
-  
-  Runs m_runs;
+  std::set<unsigned> m_runs;
   unsigned m_expNum;
   std::set<unsigned> m_streamsFilter;
   unsigned m_liveTimeout;
   unsigned m_runLiveTimeout;
   unsigned m_run;
   boost::shared_ptr<LiveFilesDB> m_filesdb;
-
 };
 
 } // namespace XtcInput

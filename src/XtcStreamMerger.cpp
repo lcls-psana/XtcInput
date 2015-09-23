@@ -152,6 +152,7 @@ XtcStreamMerger::~XtcStreamMerger ()
 Dgram
 XtcStreamMerger::next()
 {
+  MutexLock protect(m_protect);
   if (m_outputQueue.empty()) return Dgram();
 
   StreamDgram nextStreamDg = m_outputQueue.top();
@@ -292,5 +293,30 @@ std::string XtcStreamMerger::dumpStr(const StreamIndex &streamIndex) {
       << " streamId=" << std::setw(2) << streamIndex.second;
   return msg.str();
 } 
+
+unsigned 
+XtcStreamMerger::countAvailDgramsStopAt(unsigned maxToCount) {
+  MutexLock protect(m_protect);
+  unsigned count = 0;
+  typedef std::map<StreamIndex, boost::shared_ptr<XtcStreamDgIter> > StreamMap;
+  for (StreamMap::iterator it = m_streams.begin(); it != m_streams.end(); ++it) {
+    if (count >= maxToCount) break;
+    StreamDgram::StreamType streamType = (it->first).first;
+    if (streamType == StreamDgram::controlUnderDAQ) continue;
+    boost::shared_ptr<XtcStreamDgIter> stream = it->second;
+    boost::shared_ptr<DgHeader> latestStreamDgHeader = stream->latestDgHeaderInQueue();
+    if (latestStreamDgHeader) {
+      unsigned res = m_streamAvail.countUpTo(latestStreamDgHeader->path(),
+                                       latestStreamDgHeader->offset(),
+                                       maxToCount - count);
+      MsgLog(logger, DBGMSG, "    m_streamAvail.countUpTo(" << latestStreamDgHeader->path()
+             << ", " << latestStreamDgHeader->offset() << ", " << maxToCount - count << ")="
+             << res);
+      count += res;
+    }
+  }
+  MsgLog(logger, DBGMSG, "---XtcStreamMerger::countAvailDgramsStopAt(unsigned " << maxToCount << ")=" << count);
+  return count;
+}
 
 } // namespace XtcInput

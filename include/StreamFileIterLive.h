@@ -95,7 +95,6 @@ private:
   bool m_initialized;
   unsigned m_lastStream;
   std::set<unsigned> m_streamsFilter, m_streamsToProcess;
-
 };
 
 } // namespace XtcInput

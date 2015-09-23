@@ -263,8 +263,16 @@ BOOST_AUTO_TEST_CASE( test_Counter_mid )
   lu.writeSecondPart(0);
   lu.writeFirstPart(1); 
   // There are 14 + 11 events at this point, but we test when we start at the 
-  // second event that we get 24 back
-  BOOST_CHECK_EQUAL(14u+10u, sa.countUpTo(XtcFileName(chunk0), 0x00018B60, 100));
+  // first event that we get 24 back
+
+  BOOST_CHECK_EQUAL(14u+10u, sa.countUpTo(XtcFileName(chunk0), 0x00014CC4, 100));
+  BOOST_CHECK_EQUAL(10u, sa.countUpTo(XtcFileName(chunk0), 0x00014CC4, 10));
+  BOOST_CHECK_EQUAL(14u+10u, sa.countUpTo(XtcFileName(chunk0), 0x00014CC4, 100));
+
+  // move forward one more event
+  BOOST_CHECK_EQUAL(14u+9u, sa.countUpTo(XtcFileName(chunk0), 0x00018B60, 100));
+  BOOST_CHECK_EQUAL(8u, sa.countUpTo(XtcFileName(chunk0), 0x00018B60, 8));
+  BOOST_CHECK_EQUAL(14u+9u, sa.countUpTo(XtcFileName(chunk0), 0x00018B60, 100));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
