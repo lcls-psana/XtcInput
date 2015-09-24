@@ -11,6 +11,13 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-20
+2015-09-24 David Schneider
+- reduce each stream read ahead from 64 to 20 to reduce latency with
+  live data (from 3.2 seconds to 1 second for a typical 6 stream experiment). 
+  Consequently less split events and out of order data will will be fixed 
+  up by psana in live/xtc mode (as opposed to index mode)
+	
 Tag: V00-10-19
 2015-09-23 David Schneider
 - final support for liveAvail feature in this package(JIRA PSAS-184)

@@ -38,7 +38,7 @@ namespace {
   const char* logger = "XtcInput.XtcStreamDgIter" ;
 
   // size of the read-ahead buffer
-  const unsigned readAheadSize = 64;
+  const unsigned readAheadSize = 20;
 
   // functor to match header against specified clock time
   struct MatchClock {
