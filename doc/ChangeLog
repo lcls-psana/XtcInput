@@ -11,6 +11,10 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-21
+2015-09-29 David Schneider
+- catch XTCLiveTimeout so user doesn't have to. JIRA PSAS-188
+
 Tag: V00-10-20
 2015-09-24 David Schneider
 - reduce each stream read ahead from 64 to 20 to reduce latency with

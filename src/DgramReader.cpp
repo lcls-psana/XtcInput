@@ -183,6 +183,13 @@ try {
   m_queue.clear();
   m_queue.push ( Dgram() ) ;
   
+ } catch (const XTCLiveTimeout & ex) {
+
+  // to make user analysis code easier, we catch this exception rather than having 
+  // the user catch it.
+  m_queue.push ( Dgram() ) ;
+  MsgLog(logger, error, "Caught Live Timout Exception. Ending event loop. Exception: " << ex);
+
 } catch ( std::exception& e ) {
   
   // push exception message to a queue which will cause exception in consumer thread
