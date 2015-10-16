@@ -118,6 +118,12 @@ public:
 protected:
 
 private:
+  // -------- hack code
+  // hack code to investigate crash when reading small data
+  void investigateCrash(Pds::Dgram &header, off64_t offset);
+  void printDiagnosticMessage(Pds::Dgram &header, off64_t offset, int numTries);
+  void reReadHeader(Pds::Dgram &header, off64_t offset);
+  // --------- end hack code
 
   SharedFile m_file;    ///< Single chunk file
   off_t      m_off;     ///< offset in file of the next datagram to read
