@@ -11,6 +11,11 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-23
+2015-10-21 David Schneider
+- add LiveAvail as a psana python module that users will use.
+- include python utility code for working with the DgramList.
+	
 Tag: V00-10-22
 2015-10-16 David Schneider
 - add code to address JIRA PSAS-192. This is hack code to trap for 
