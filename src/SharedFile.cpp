@@ -31,8 +31,27 @@
 
 namespace {
 
+#define MSGLOGLVL debug
+  
   const char* logger = "XtcInput.SharedFile";
+  
+  off_t getFileLength(int fd) {
+    struct stat buff;
+    int result = ::fstat(fd, &buff);
+    if (result != 0) {
+      throw XtcInput::ErrnoException(ERR_LOC, "getFileLength", "fstat failed");
+    }
+    return buff.st_size;
+  }
 
+  off_t getFileOffset(int fd) {
+    off_t fileOffset = ::lseek(fd, 0, SEEK_CUR);
+    if (fileOffset == -1) {
+      MsgLog(logger, error, "lseek call failed for file fd=" << fd);
+      throw XtcInput::ErrnoException(ERR_LOC, "lseek", "I/O call failed during read on live data.");
+    }
+    return fileOffset;
+  }
 }
 
 //		----------------------------------------
@@ -49,6 +68,7 @@ SharedFile::SharedFileImpl::SharedFileImpl (const XtcFileName& argPath,
   : path(argPath)
   , liveTimeout(argLiveTimeout)
   , fd(-1)
+  , lastFileLength(-1)
 {
   fd = open(path.path().c_str(), O_RDONLY|O_LARGEFILE);
   if (fd < 0) {
@@ -68,7 +88,9 @@ SharedFile::SharedFileImpl::SharedFileImpl (const XtcFileName& argPath,
     MsgLog( logger, error, "failed to open input XTC file: " << path );
     throw FileOpenException(ERR_LOC, path.path()) ;
   } else {
-    MsgLog( logger, trace, "opened input XTC file: " << path << " fd=" << fd);
+    lastFileLength = getFileLength(fd);
+    MsgLog( logger, trace, "opened input XTC file: " << path << " fd=" << fd 
+            << " initial size from fstat: " << lastFileLength);
   }
 }
 
@@ -83,48 +105,86 @@ SharedFile::SharedFileImpl::~SharedFileImpl()
 
 // Read up to size bytes from a file, if EOF is hit
 // then check that it is real EOF or wait (in live mode only)
-// Returns number of bytes read or negative number for errors.
+// Returns number of bytes read or negative number for errors
 ssize_t
 SharedFile::read(char* buf, size_t size)
 {
-  std::time_t t0 = m_impl->liveTimeout ? std::time(0) : 0;
-  size_t left = size;
+  if (not m_impl->liveTimeout) {
+    ssize_t nread = 0;
+    bool interrupted = false;
+    do {
+      nread = ::read(m_impl->fd, buf, size);
+      if (nread < 0) {
+        interrupted = (errno == EINTR);
+      }
+    } while (interrupted);
+    MsgLog(logger, debug, "read " << nread << " bytes");    
+    return nread;
+  }
+    
+  // live data
+  off_t readFromOffset = getFileOffset(m_impl->fd);
+  std::time_t t0 = std::time(0);
+  std::time_t now = t0;
+  off_t left = off_t(size);
+
+  MsgLog(logger, MSGLOGLVL, "read size=" << size << " from " << m_impl->path
+         << " current file pos=" << readFromOffset 
+         << " len=" << m_impl->lastFileLength);
+
   while (left > 0) {
-    ssize_t nread = ::read(m_impl->fd, buf+size-left, left);
-    MsgLog(logger, debug, "read " << nread << " bytes");
-    if (nread == 0) {
-      // EOF
-      if (t0 and (time(0) - t0) > m_impl->liveTimeout) {
-        // in live mode we reached timeout
-        MsgLog(logger, error, "Timed out while waiting for data in live mode for file: " << m_impl->path);
-        throw XTCLiveTimeout(ERR_LOC, m_impl->path.path(), m_impl->liveTimeout);
-      } else if (t0) {
-        // in live mode check if we hit real EOF
-        if (this->eof()) {
-          MsgLog(logger, debug, "Live EOF detected");
-          break;
-        }
-        sleep(1); 
-        struct stat buf;
-        int f_stat = fstat(m_impl->fd, &buf);
-        if ( f_stat == -1 ) {
-          MsgLog(logger, warning, "fstat failed for " << m_impl->path);   
-        } else {
-          MsgLog(logger, debug, "Slept for 1 sec while waiting for more data from file: " << m_impl->path << " size " << buf.st_size);
-        }
-      } else {
-        // non-live mode, just return what we read so far
+    bool readFromOffsetIsEOF = false;
+    while ((m_impl->lastFileLength <= readFromOffset) and 
+           ((now-t0) < m_impl->liveTimeout) and (not readFromOffsetIsEOF)) {
+      sleep(1);
+      now = std::time(0);
+      m_impl->lastFileLength = getFileLength(m_impl->fd);
+      if (m_impl->lastFileLength <= readFromOffset) {
+        readFromOffsetIsEOF = this->eof();
+      }
+
+      MsgLog(logger, MSGLOGLVL, "slept 1 sec. New filelength= " 
+             << m_impl->lastFileLength << " sec until timeout: " 
+             << m_impl->liveTimeout - (now-t0)
+             << " eof=" << readFromOffsetIsEOF);
+    }
+
+    if (m_impl->lastFileLength > readFromOffset) {
+      off_t bytesNextRead = std::min(off_t(left), (m_impl->lastFileLength) - readFromOffset);
+      ssize_t nread = ::read(m_impl->fd, buf+(size-left), size_t(bytesNextRead));
+      if ((nread >= 0) and (nread != bytesNextRead)) {
+        MsgLog(logger, error, "system read from file " << m_impl->path 
+               << " returned only " << nread << " even though it appears that " 
+               << bytesNextRead << " bytes are available by looking at file length");
+      }
+      if (nread > 0) {
+        MsgLog(logger, MSGLOGLVL, "read " << nread << " bytes");
+        // got some data
+        readFromOffset += nread;
+        left -= nread;
+        // reset timeout
+        t0 = std::time(0);
+        continue;
+      } else if (nread == 0) {
+        // unexpected, we have already printed error message.
+        // We'll continue the loop, but not reset the timer.
+        continue;
+      } else if (nread < 0) {
+        // error, retry for interrupted reads. Don't reset counter.
+        if (errno == EINTR) continue;
+        // return negative value so client can error out. Note - we may have read some of
+        // the buffer in, really should reset file pointer to position when function first
+        // entered
+        MsgLog(logger, MSGLOGLVL, "nread=" << nread << " returning");
+        return nread; 
+      }
+    } else {
+      if (readFromOffsetIsEOF or (this->eof())) {
+        MsgLog(logger, MSGLOGLVL, "Live EOF detected");
         break;
       }
-    } else if (nread < 0) {
-      // error, retry for interrupted reads
-      if (errno == EINTR) continue;
-      return nread;
-    } else {
-      // got some data
-      left -= nread;
-      // reset timeout
-      if (t0) t0 = std::time(0);
+      MsgLog(logger, error, "Timed out while waiting for data in live mode for file: " << m_impl->path);
+      throw XTCLiveTimeout(ERR_LOC, m_impl->path.path(), m_impl->liveTimeout);
     }
   }
   return size-left;

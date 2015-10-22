@@ -116,6 +116,7 @@ private:
     XtcFileName path;
     unsigned liveTimeout;
     int fd;
+    off_t lastFileLength;
   };
   
   boost::shared_ptr<SharedFileImpl> m_impl;

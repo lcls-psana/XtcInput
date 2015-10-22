@@ -11,6 +11,13 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-24
+2015-10-22 David Schneider
+- change SharedFile::read to never read past fstat reported length of the
+  file -  JIRA PSAS-192.
+- use new UTESTSEXCL option in SConscript to exclude two tests.
+- execute more unit tests (xtcChunkDgIter test)
+	
 Tag: V00-10-23
 2015-10-21 David Schneider
 - add LiveAvail as a psana python module that users will use.

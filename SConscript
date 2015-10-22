@@ -22,8 +22,11 @@ Import('*')
 # BINS - dictionary of executables and their corresponding source files
 # TESTS - dictionary of test applications and their corresponding source files
 # SCRIPTS - list of scripts in app/ directory
-# UTESTS - names of the unit tests to run, if not given then all tests are unit tests
+# UTESTS - names of the unit tests to run, if not given then all tests are unit tests,
+#           except for those filtered out by UTESTSEXCL
+# UTESTSEXCL - names of unit tests to exclude. Applied after UTESTS filter applied.
 # PYEXTMOD - name of the Python extension module, package name used by default
 #
 #
-standardSConscript(UTESTS="XtcFileNameTest FileNameIterTest CountUpcomingTest CountStreamAvailTest")
+
+standardSConscript(UTESTSEXCL="XtcReadAheadTest XtcFilterTest")
