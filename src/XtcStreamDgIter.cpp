@@ -37,8 +37,16 @@ namespace {
 
   const char* logger = "XtcInput.XtcStreamDgIter" ;
 
-  // size of the read-ahead buffer
-  const unsigned readAheadSize = 20;
+  // size of the read-ahead buffer. The size of the buffer is the range
+  // over which we can repair split events and reorder datagrams in time order.
+  // Making it too long delays live mode. Roughly want a seconds worth of
+  // data per stream. For an experiment with 6 DAQ streams at 120hz, this
+  // would be 20 for a DAQ stream and 120 for a control stream, however
+  // a control stream need not be recording at 120hz, and we don't expect
+  // to have to look more than a few datagrams into the past to repair
+  // control stream. 
+  const unsigned daqReadAheadSize = 20;
+  const unsigned controlReadAheadSize = 40;
 
   // functor to match header against specified clock time
   struct MatchClock {
@@ -79,29 +87,38 @@ namespace XtcInput {
 // Constructors --
 //----------------
 XtcStreamDgIter::XtcStreamDgIter(const boost::shared_ptr<ChunkFileIterI>& chunkIter,
-                                 bool clockSort)
+                                 bool controlStream)
   : m_chunkIter(chunkIter)
   , m_dgiter()
   , m_chunkCount(0)
   , m_streamCount(0)
   , m_headerQueue()
-  , m_clockSort(clockSort)
+  , m_controlStream(controlStream)
 {
-  m_headerQueue.reserve(::readAheadSize);
+  if (controlStream) {
+    m_headerQueue.reserve(::controlReadAheadSize);
+  } else {
+    m_headerQueue.reserve(::daqReadAheadSize);
+  }
 }
 
 XtcStreamDgIter::XtcStreamDgIter(const boost::shared_ptr<ChunkFileIterI>& chunkIter,
                                  const boost::shared_ptr<ThirdDatagram> & thirdDatagram,
-                                 bool clockSort)
+                                 bool controlStream)
   : m_chunkIter(chunkIter)
   , m_dgiter()
   , m_chunkCount(0)
   , m_streamCount(0)
   , m_headerQueue()
-  , m_clockSort(clockSort)
+  , m_controlStream(controlStream)
   , m_thirdDatagram(thirdDatagram)
+    
 {
-  m_headerQueue.reserve(::readAheadSize);
+  if (controlStream) {
+    m_headerQueue.reserve(::controlReadAheadSize);
+  } else {
+    m_headerQueue.reserve(::daqReadAheadSize);
+  }
 }
 //--------------
 // Destructor --
@@ -141,8 +158,14 @@ XtcStreamDgIter::next()
 void
 XtcStreamDgIter::readAhead()
 {
-
-  while (m_headerQueue.size() < ::readAheadSize) {
+  unsigned readAheadSize;
+  if (m_controlStream) {
+    readAheadSize = ::controlReadAheadSize;
+  } else {
+    readAheadSize = ::daqReadAheadSize;
+  }
+  
+  while (m_headerQueue.size() < readAheadSize) {
 
     if (not m_dgiter) {
 
@@ -210,43 +233,43 @@ XtcStreamDgIter::readAhead()
 
 }
 
-// add one header to the queue in a correct position based on clockSort
+// add one header to the queue
 void
 XtcStreamDgIter::queueHeader(const boost::shared_ptr<DgHeader>& header)
 {
   Pds::TransitionId::Value tran = header->transition();
   const Pds::ClockTime& clock = header->clock();
   MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: transition: " << Pds::TransitionId::name(tran)
-         << " time: " << clock.seconds() << "sec " << clock.nanoseconds() << " nsec"
-         << " clockSort=" << m_clockSort);
+         << " sec: " << clock.seconds() << "nsec:" << clock.nanoseconds() << " fid: "
+         << header->fiducials() << " controlStream=" << m_controlStream);
 
-  if (m_clockSort) {  
-    // For split transitions look at the queue and find matching split transition,
-    // store them together if found, otherwise assume it's first piece and store
-    // it like normal transition.
-    if (header->damage().value() & (1 << Pds::Damage::DroppedContribution)) {
-      HeaderQueue::iterator it = std::find_if(m_headerQueue.begin(), m_headerQueue.end(), MatchClock(clock));
-      if (it != m_headerQueue.end()) {
-        MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: split transition, found match");
-        m_headerQueue.insert(it, header);
-        return;
-      }
+  // For split transitions look at the queue and find matching split transition,
+  // store them together if found, otherwise assume it's first piece and store
+  // it like normal transition. Match based on the clock.
+  if (header->damage().value() & (1 << Pds::Damage::DroppedContribution)) {
+    HeaderQueue::iterator it = std::find_if(m_headerQueue.begin(), m_headerQueue.end(), MatchClock(clock));
+    if (it != m_headerQueue.end()) {
+      MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: split transition, found match");
+      m_headerQueue.insert(it, header);
+      return;
     }
   }
+  
 
-  // At this point we have either clockSort=false or clockSort=True and a 
-  // non-split transition or split transition without
-  // other pieces of the same split transitions (other pieces may have appeared
-  // already but have been popped from queue then). We treat single piece of split
-  // transition the same as non-split transition below.
+  // At this point we have a non-split transition or a split transition without
+  // other pieces of the same split transitions (other pieces may have already appeared
+  // in the stream, but have been popped from the queue). Below, we treat 
+  // a single piece of a split transition the same as a non-split transition.
 
-  // There was time when clocks for L1Accept transitions and other transition types
-  // were separate and sometimes not synchronized. Without applying clock drift
-  // correction we still want to keeps things stable here, so we do not move
-  // L1Accept and non-L1Accept transitions w.r.t. each other and we do not re-arrange
-  // non-split transitions w.r.t each other. We can re-arrange L1Accept transitions
-  // but only if they are in the same run of L1Accepts (there are no non-L1Accept
-  // transitions between two L1Accepts).
+  // We keep the L1Accept datagrams in the queue sorted by clock time. We do 
+  // not move a L1Accept past a non L1Accept transition even if sorting by clock time
+  // indicates we should. Control streams use two clocks, an internal one for L1Accepts,
+  // and the DAQ one for non transitions, so this would definitely not be correct for
+  // control streams. 
+  //
+  // this sorting serves two purposes: to make sure each stream merger sees the earliest
+  // known datagrams from each stream so that it can properly merge datagrams from the streams
+  // into an event, and to time order events for the user.
 
   if (tran != Pds::TransitionId::L1Accept) {
     MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: non-event transition, append");
@@ -255,32 +278,53 @@ XtcStreamDgIter::queueHeader(const boost::shared_ptr<DgHeader>& header)
   }
 
   /*
-   *  At this point we have L1Accept. If clockSort, start from the end of the 
+   *  At this point we have L1Accept. Start from the end of the 
    *  queue and walk to the head until we meet either earlier L1Accept or 
-   * non-L1Accept transition. If not clockSort, place at the end of the queue.
+   * non-L1Accept transition. If we meet the same transition and this is
+   * control stream, throw them both out.
    */
-  if (not m_clockSort) {
-    m_headerQueue.push_back(header);
-  } else {
-    for (HeaderQueue::iterator it = m_headerQueue.end(); it != m_headerQueue.begin(); -- it) {
-      const boost::shared_ptr<DgHeader>& prev = *(it - 1);
-
-      if (prev->transition() != Pds::TransitionId::L1Accept) {
-        MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: insert L1Accept after non-L1Accept");
-        m_headerQueue.insert(it, header);
+  for (HeaderQueue::iterator it = m_headerQueue.end(); it != m_headerQueue.begin(); -- it) {
+    const boost::shared_ptr<DgHeader>& prev = *(it - 1);
+    
+    if (prev->transition() != Pds::TransitionId::L1Accept) {
+      MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: insert L1Accept after non-L1Accept");
+      m_headerQueue.insert(it, header);
+      return;
+    } else if (clock > prev->clock()) {
+      MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: insert L1Accept after earlier L1Accept");
+      m_headerQueue.insert(it, header);
+      return;
+    } else if (clock == prev->clock()) {
+      if (m_controlStream) {
+        MsgLog(logger, warning, "control stream has two datagrams with "
+               "the same seconds/nanoseconds timestamp. "
+               "The latter one is not marked as a split event. "
+               "Discarding the latter one: path=" << header->path()
+               << " offset=" << header->offset() 
+               << " sec=" << clock.seconds()
+               << " nano=" << clock.nanoseconds()
+               << " fiducials=" << header->fiducials()
+               << " transition=" << Pds::TransitionId::name(header->transition()));
         return;
-      } else if (clock > prev->clock()) {
-        MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: insert L1Accept after earlier L1Accept");
+      } else {
+        MsgLog(logger, warning, "DAQ stream has two datagrams with "
+               "the same seconds/nanoseconds timestamp. "
+               "The latter one is not marked as a split event. "
+               "path=" << header->path()
+               << " offset=" << header->offset() 
+               << " sec=" << clock.seconds()
+               << " nano=" << clock.nanoseconds()
+               << " fiducials=" << header->fiducials()
+               << " transition=" << Pds::TransitionId::name(header->transition()));
         m_headerQueue.insert(it, header);
         return;
       }
     }
-
-    // could not find any acceptable place, means this transition is earlier than all
-    // other transitions, add it to the head of the queue
-    MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: insert L1Accept at the queue head");
-    m_headerQueue.insert(m_headerQueue.begin(), header);
   }
+  // could not find any acceptable place, means this transition is earlier than all
+  // other transitions, add it to the head of the queue
+  MsgLog(logger, debug, "XtcStreamDgIter::queueHeader: insert L1Accept at the queue head");
+  m_headerQueue.insert(m_headerQueue.begin(), header);
     
 }
 

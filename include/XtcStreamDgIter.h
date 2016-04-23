@@ -69,13 +69,10 @@ public:
    *  Constructor accepts iterator object which iterators over chunks in a stream.
    *
    *  @param[in]  chunkIter Iterator over chunks in a stream
-   *  @param[in]  clockSort if we expect out of order L1Accepts, set to true to look for the
-   *              correct spot to place a new L1Accept (does not cross non-L1Accept transition
-   *              boundaries). Defaults to true. Appropriate for DAQ streams, not neccessary for
-   *              Control streams.
+   *  @param[in]  controlStream indicates this is a control/EPICS IOC stream
    */
   XtcStreamDgIter(const boost::shared_ptr<ChunkFileIterI>& chunkIter,
-                  bool clockSort=true);
+                  bool controlStream=false);
 
   /// struct to take a filename and offset for the third datagram in the iteration
   struct ThirdDatagram {
@@ -100,11 +97,11 @@ public:
    *  @param[in] thirdDatagram if non-null, the filename and offset are used for the
    *             third datagram this stream iterator returns. The filename must
    *             exist in the chunkIter or an exception will be thrown from next
-   *  @param[in] clockSort as with first constructor
+   *  @param[in] controlStream true if this is a control/EPICS/IOC stream
    */
   XtcStreamDgIter(const boost::shared_ptr<ChunkFileIterI>& chunkIter,
                   const boost::shared_ptr<ThirdDatagram> & thirdDatagram,
-                  bool clockSort=true);
+                  bool controlStream = false);
 
   // Destructor
   ~XtcStreamDgIter () ;
@@ -147,7 +144,7 @@ private:
   uint64_t m_chunkCount ;                       ///< Datagram counter for current chunk
   uint64_t m_streamCount;                       ///< Datagram counter for stream
   HeaderQueue m_headerQueue;            ///< Queue for read-ahead headers
-  bool m_clockSort;                     ///< sort datagrams in between non-L1Accept transitions by clock time
+  bool m_controlStream;                 ///< true if this is a control stream
   boost::shared_ptr<ThirdDatagram> m_thirdDatagram;
 };
 

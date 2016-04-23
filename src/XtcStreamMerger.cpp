@@ -102,14 +102,13 @@ XtcStreamMerger::XtcStreamMerger(const boost::shared_ptr<StreamFileIterI>& strea
     if (not chunkFileIter) break;
 
     bool controlStream = int(streamIter->stream()) >= m_firstControlStream;
-    bool clockSort = not controlStream;
 
     boost::shared_ptr<XtcStreamDgIter::ThirdDatagram> thirdDatagram = 
       checkForThirdDatagram(streamIter->stream(), m_thirdEvent);
 
     // create new stream
     const boost::shared_ptr<XtcStreamDgIter>& stream = 
-      boost::make_shared<XtcStreamDgIter>(chunkFileIter, thirdDatagram, clockSort);
+      boost::make_shared<XtcStreamDgIter>(chunkFileIter, thirdDatagram, controlStream);
     if (controlStream) {
       StreamDgram dg(stream->next(), StreamDgram::controlUnderDAQ, 0, idxCtrl);
       StreamIndex streamIndex(StreamDgram::controlUnderDAQ, idxCtrl);

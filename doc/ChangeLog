@@ -11,6 +11,10 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-25
+2016-4-23 David Schneider
+- within each control stream, check for duplicated event ids. Discard latter. JIRA PSAS-234
+
 Tag: V00-10-24
 2015-10-22 David Schneider
 - change SharedFile::read to never read past fstat reported length of the
