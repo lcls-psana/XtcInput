@@ -11,8 +11,12 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V00-10-26
+2016-09-08 Mikhail Dubrovin
+- fix documentation problems in StreamFileIterLive.h and PyLiveAvail.py
+
 Tag: V00-10-25
-2016-4-23 David Schneider
+2016-04-23 David Schneider
 - within each control stream, check for duplicated event ids. Discard latter. JIRA PSAS-234
 
 Tag: V00-10-24
@@ -21,16 +25,16 @@ Tag: V00-10-24
   file -  JIRA PSAS-192.
 - use new UTESTSEXCL option in SConscript to exclude two tests.
 - execute more unit tests (xtcChunkDgIter test)
-	
+
 Tag: V00-10-23
 2015-10-21 David Schneider
 - add LiveAvail as a psana python module that users will use.
 - include python utility code for working with the DgramList.
-	
+
 Tag: V00-10-22
 2015-10-16 David Schneider
-- add code to address JIRA PSAS-192. This is hack code to trap for 
-  a corrupt data condition that we think happens while reading from 
+- add code to address JIRA PSAS-192. This is hack code to trap for
+  a corrupt data condition that we think happens while reading from
   the end of live .inprogress files.
 
 Tag: V00-10-21
@@ -40,10 +44,10 @@ Tag: V00-10-21
 Tag: V00-10-20
 2015-09-24 David Schneider
 - reduce each stream read ahead from 64 to 20 to reduce latency with
-  live data (from 3.2 seconds to 1 second for a typical 6 stream experiment). 
-  Consequently less split events and out of order data will will be fixed 
+  live data (from 3.2 seconds to 1 second for a typical 6 stream experiment).
+  Consequently less split events and out of order data will will be fixed
   up by psana in live/xtc mode (as opposed to index mode)
-	
+
 Tag: V00-10-19
 2015-09-23 David Schneider
 - final support for liveAvail feature in this package(JIRA PSAS-184)
@@ -53,7 +57,7 @@ Tag: V00-10-19
 - add LiveAvail (high level interface to feature) & StreamAvail (does counting) classes
 - DgramReader - takes a reference to a LiveAvail shared pointer to set if in live mode
 - XtcStreamDgIter - returns latest dg in queue for feature
-- note, once reader thread destroys XtcStreamMerger, liveAvail always returns False	
+- note, once reader thread destroys XtcStreamMerger, liveAvail always returns False
 
 Tag: V00-10-18
 2015-09-21 David Schneider
@@ -63,7 +67,7 @@ Tag: V00-10-17
 2015-09-17 David Schneider
 - Add building blocks for upcoming liveAvail feature (JIRA PSAS-184)
 - presently not used, should not change anything
-	
+
 Tag: V00-10-16
 2015-09-09 David Schneider
 - Changes to how psana processes input files:
@@ -83,20 +87,20 @@ Tag: V00-10-14
 Tag: V00-10-13
 2015-03-05 David Schneider
 - JIRA issue PSAS-85, add live mode support
-	
+
 Tag: V00-10-12
 2015-03-03 David Schneider
 - small data JIRA issue PSAS-85
-- update XtcFileName with boolean flag for small data. 
+- update XtcFileName with boolean flag for small data.
   some constructors take additional parameter about small
   contains logic for distinguishing small data file (ends with .smd.xtc)
-  contains logic to return large xtc filename from small (strip out .smd)	
+  contains logic to return large xtc filename from small (strip out .smd)
   change sort order so all small xtc come before large xtc
 - Note: live mode not implemented yet - LiveFilesDB only looks for large xtc files
 
 Tag: V00-10-11
 2015-02-12 David Schneider
-- add parameter PSXtcInput.XtcInputModule.runLiveTimeout to get psana to wait for 
+- add parameter PSXtcInput.XtcInputModule.runLiveTimeout to get psana to wait for
   new runs in live mode. JRIA issue PSAS-108
 
 Tag: V00-10-10
@@ -124,7 +128,7 @@ Tag: V00-10-06
 
 Tag: V00-10-05
 2014-08-27 David Schneider
-- add feature: jump to arbitrary offsets in xtc files before second event. 
+- add feature: jump to arbitrary offsets in xtc files before second event.
   DgramReader takes new argument: firstEventAfterConfigure
   This percolates down to other classes in the package.
   New class XtcFilesPosition describes file offsets before second event.
@@ -133,19 +137,19 @@ Tag: V00-10-04
 2014-08-08 David Schneider
 - add file offset field to XtcInput::Dgram
 - have psana record file offset for standard xtcinput (not indexing)
-  presently information not used by other packages 
+  presently information not used by other packages
 - change a declaration from char * to const char * to fix rhel6 warning
 
 Tag: V00-10-03
 2014-08-01 David Schneider
 - discard L1Accept's that have 0x1FFFF as the fiducial. jira ticket PSAS-13
- 
+
 Tag: V00-10-02
 2014-07-22 David Schneider
 - add backward compatible XtcStreamDgIter constructor for package PSXtcQC
-- also add backward compatiable DgramReader constructor - though doesn't 
+- also add backward compatiable DgramReader constructor - though doesn't
   appear to be needed
-	
+
 
 Tag: V00-10-01
 2014-07-18 David Schneider
@@ -157,7 +161,7 @@ Tag: V00-10-00
   Introduce StreamDgram, keep track of L1Block number
   Introduce fiducial/second based comparisons
   Rework XtcStreamMerger
-	
+
 Tag: V00-09-13
 2014-05-13 Christopher O'Grady
 - add Dgram::operator< so indexing can sort non-event datagrams
@@ -177,8 +181,8 @@ Tag: V00-09-09
 
 Tag: V00-09-08
 2014-01-06 Andy Salnikov
-- XtcChunkDgIter::next() - add protection for corrupted headers, checks 
-  extent size of the top-most XTC and raises exception if size is 
+- XtcChunkDgIter::next() - add protection for corrupted headers, checks
+  extent size of the top-most XTC and raises exception if size is
   lower that size of XTC header
 
 Tag: V00-09-07
@@ -229,11 +233,11 @@ Tag: V00-08-01
 Tag: V00-08-00
 2013-03-01 Andy Salnikov
 - undo V00-07-03 to make a tag for ana-0.7.x
-- after introduction of read-ahead for headers current file name 
+- after introduction of read-ahead for headers current file name
   does not make sense anymore
-  - removed XtcStreamDgIter::m_file member and method 
+  - removed XtcStreamDgIter::m_file member and method
     XtcStreamDgIter::chunkName()
-  - added DgHeader::path() method which should be used instead 
+  - added DgHeader::path() method which should be used instead
     of XtcStreamDgIter::chunkName()
   - replace boost::filesystem::path with XtcFileName in DgHeader
   - XtcFileName adds extension() method
@@ -246,7 +250,7 @@ Tag: V00-07-03
 
 Tag: V00-07-02
 2013-01-21 Andy Salnikov
-- bug fix in implementation of Shared file, assumed live data even 
+- bug fix in implementation of Shared file, assumed live data even
   when file extension was not inprogress
 
 Tag: V00-07-01
@@ -260,18 +264,18 @@ Tag: V00-07-00
 - preparing for datagram read-ahead and sorting, for now introduce
   new class DgHeader that will be used in read-ahead
 - split XtcStreamDgIter into three classes: SharedFile, DgHeader and
-  same XtcStreamDgIter. XtcStreamDgIter now returns DgHeader instead 
+  same XtcStreamDgIter. XtcStreamDgIter now returns DgHeader instead
   of whole datagram. DgHeader reads datagram when requested. Both
   XtcStreamDgIter and DgHeader used SharedFile class for reading.
-- maximum datagram size removed from interfaces (constructors), there 
-  is one internal limit on datagram size (256MB) used for checking 
+- maximum datagram size removed from interfaces (constructors), there
+  is one internal limit on datagram size (256MB) used for checking
   against header corruption
 - there are no changes in the order of datagrams yet, all results should
   be identical to what we had before
 
 Tag: V00-06-06
 2012-10-11 Andy Salnikov
-- if live database contains no info about files then RunFileIterLive 
+- if live database contains no info about files then RunFileIterLive
   throws exception instead of returning empty "EOF" histogram
 
 Tag: V00-06-05
@@ -312,8 +316,8 @@ Tag: V00-05-00
 2012-07-09 Andy Salnikov
 - a bit of redesign, split iterators into iterators over datagrams
   and iterators over files
-- iteration over files has two implementation, first is based on static 
-  list of input files as before, second uses database as the source of 
+- iteration over files has two implementation, first is based on static
+  list of input files as before, second uses database as the source of
   live data; second implementation is not tested yet
 
 Tag: V00-04-01
@@ -360,14 +364,14 @@ Tag: V00-01-02
 Tag: V00-01-01
 2011-03-31 Andy Salnikov
 - XtcStreamMerger::next - last change introduced a bug, fixed now
-- XtcIterator.cpp: trying to find a workaround for some weird cases 
+- XtcIterator.cpp: trying to find a workaround for some weird cases
   with CsPad::ElementV2 reading when nested XTC object indicated larger
   data size than its containing XTC container.
 
 Tag: V00-01-00
 2011-03-29 Andy Salnikov
 - add support for extracting run number from datagrams stored in a queue
-- Dgram is now a class instead of namespace, instances contain pointer 
+- Dgram is now a class instead of namespace, instances contain pointer
   to Pds::Dgram and XtcFileName.
 - XtcStreamMerge::next() returns Dgram object
 - DgramQueue class stores Dgram objects
@@ -385,13 +389,13 @@ Tag: V00-00-04
 
 Tag: V00-00-03
 2011-02-16 Andy Salnikov
-- stop throwing exceptions at premature EOF, printing error message is 
+- stop throwing exceptions at premature EOF, printing error message is
   sufficient.
 
 Tag: V00-00-02
 2011-01-26 Andy Salnikov
 - returned XtcIterator back to translator package
-- XtcIterator class is now a simple tree-traversal iterator which 
+- XtcIterator class is now a simple tree-traversal iterator which
   returns one XTC object at a time
 
 Tag: V00-00-01

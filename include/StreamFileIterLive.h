@@ -62,7 +62,7 @@ public:
    *  @param[in] run       Run number
    *  @param[in] streamsFilter list of streams to process (empty means all associated with run)
    *  @param[in] liveTimeout Timeout in second to wait for live data
-   *  @param[in] runLiveTimeout Timeout in seconds to wait for a new run
+   *  @param[in] runLiveTimeOut Timeout in seconds to wait for a new run
    *  @param[in] filesdb   Database connection
    */
   StreamFileIterLive (unsigned expNum, unsigned run, const std::set<unsigned> &streamsFilter, unsigned liveTimeout, unsigned runLiveTimeOut,

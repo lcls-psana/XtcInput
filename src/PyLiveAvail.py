@@ -13,12 +13,15 @@ class LiveAvail(object):
     To use LiveAvail, an instance of the class must be passed to the DataSource
     module list. Example:
 
+    Usage::
+
         import psana
         liveAvail = psana.LiveAvail()
+
         ds = psana.DataSource("exp=xpptut13:run=39:smd:live", module=liveAvail)
         for evt in ds.events():
-           if liveAvail.toFarBehind(): continue
-           # process event
+            if liveAvail.toFarBehind(): continue
+            # process event
     
     The method toFarBehind() will return True when reading live data, and the most 
     recent event obtained appears to be far behind the most recent events available
@@ -136,7 +139,8 @@ class LiveAvail(object):
         sys.stderr.write("WARN: LiveAvail: %s\n" % msg)
 
     def _identifyInProgressDaqStreams(self, file2offset):
-        '''helper to beginrun. 
+        '''helper to beginrun.
+
         ARGS:
           file2offset: result of parsing psana.DgramList from beginrun
 
