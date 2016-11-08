@@ -281,7 +281,7 @@ XtcStreamDgIter::queueHeader(const boost::shared_ptr<DgHeader>& header)
    *  At this point we have L1Accept. Start from the end of the 
    *  queue and walk to the head until we meet either earlier L1Accept or 
    * non-L1Accept transition. If we meet the same transition and this is
-   * control stream, throw them both out.
+   * control stream, throw out datagram in the queue, and the new datagram.
    */
   for (HeaderQueue::iterator it = m_headerQueue.end(); it != m_headerQueue.begin(); -- it) {
     const boost::shared_ptr<DgHeader>& prev = *(it - 1);
@@ -299,17 +299,18 @@ XtcStreamDgIter::queueHeader(const boost::shared_ptr<DgHeader>& header)
         MsgLog(logger, warning, "control stream has two datagrams with "
                "the same seconds/nanoseconds timestamp. "
                "The latter one is not marked as a split event. "
-               "Discarding the latter one: path=" << header->path()
+               "REMOVING the existing one, and Discarding the latter one: path=" << header->path()
                << " offset=" << header->offset() 
                << " sec=" << clock.seconds()
                << " nano=" << clock.nanoseconds()
                << " fiducials=" << header->fiducials()
                << " transition=" << Pds::TransitionId::name(header->transition()));
+        m_headerQueue.erase(it);
         return;
       } else {
         MsgLog(logger, warning, "DAQ stream has two datagrams with "
                "the same seconds/nanoseconds timestamp. "
-               "The latter one is not marked as a split event. "
+               "The latter one is not marked as a split event, it is being added to the queue. "
                "path=" << header->path()
                << " offset=" << header->offset() 
                << " sec=" << clock.seconds()
