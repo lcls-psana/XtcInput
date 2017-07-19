@@ -71,6 +71,9 @@ public:
   // returns true if small data file
   bool small() const { return m_small; }
 
+  // get corresponding large file for a small file
+  XtcFileName largeFile() const ;
+
   // get full name
   const std::string& path() const { return m_path ; }
 

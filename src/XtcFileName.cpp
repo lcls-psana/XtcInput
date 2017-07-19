@@ -163,6 +163,29 @@ XtcFileName::XtcFileName ( const std::string& path )
   m_path += buf;
 }
 
+// get corresponding large file for a small file
+XtcFileName
+XtcFileName::largeFile() const
+{
+  // FIXME: What about ???.smd.xtc.inprogress
+  if (!small()) return *this;
+
+  std::string name = m_path;
+
+  std::string::size_type n1 = name.rfind('/');
+  if (n1 == std::string::npos) return *this; // invalid string, just return
+
+  std::string::size_type n2 = name.rfind('/', n1-1);
+  if (n2 != std::string::npos) {
+    name.erase(n2+1);
+  } else {
+    return *this; // invalid string, just return
+  }
+
+  name.append(largeBasename());
+  return XtcFileName(name);
+}
+
 // get base name
 std::string
 XtcFileName::basename() const
