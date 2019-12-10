@@ -202,7 +202,7 @@ class LiveAvail(object):
         assert stream == self._examinedDaqStream
         try:
             fh = io.open(fname,'rb')
-        except IOError,e:
+        except IOError as e:
             self.errormsg("beginrun: could not open file " + \
                           ("%s.\nIOError: %s\nLiveAvail always returning False" % \
                           (fname, e)))
@@ -266,7 +266,7 @@ class LiveAvail(object):
 
         try:
             streamInfo['fileobj'] = io.open(fname, 'rb')
-        except IOError,ioError:
+        except IOError as ioError:
             if fname.endswith('.inprogress'):
                 self.warnmsg("event:. chunk changed. Failed to open a "
                              "inprogress file associated with event. Trying "
@@ -277,7 +277,7 @@ class LiveAvail(object):
                 streamInfo['fname'] = fname
                 try:
                     streamInfo['fileobj'] = io.open(fname, 'rb')
-                except IOError, ioError:
+                except IOError as ioError:
                     self.errormsg("evente: chunk changed, but could "
                                   "open neither inprogress nor not inprogress. "
                                   "liveAvail() will always return False");
