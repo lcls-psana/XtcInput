@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import sys
 import os
 import io
@@ -155,7 +157,7 @@ class LiveAvail(object):
         inProgressDaqStreams = {}
         notInProgressDaqStreams = set()
 
-        for fname, offset in file2offset.iteritems():
+        for fname, offset in file2offset.items():
             stream, chunk = xtcFileNameStreamChunk(fname)
             if stream is None or chunk is None:
                 self.errormsg("could not parse the xtcfilename=%s from Dglist" % fname)
@@ -236,7 +238,7 @@ class LiveAvail(object):
             self.errormsg("dglist is None in event %d" % self.eventNumber)
             return 
 
-        for fname, offset in fname2offset.iteritems():
+        for fname, offset in fname2offset.items():
             stream, chunk = xtcFileNameStreamChunk(fname)
 
             if stream is None or chunk is None:
@@ -339,7 +341,7 @@ class LiveAvail(object):
 
         if self._debug:
             bytesOnDisk = fileLength - self._examinedDaqStreamInfo['last_off']
-            dgramsOnDisk = bytesOnDisk/self._examinedDaqStreamInfo['dgramsize']
+            dgramsOnDisk = old_div(bytesOnDisk,self._examinedDaqStreamInfo['dgramsize'])
             self.debugmsg("event=%d toFarBehind()=%d (based on eventLag=%d or dgrams_this_stream=%d)dgramsOnDisk=%.1f filelength=%.2f mb" % \
                           (self._eventNumber, result, self._eventLag, numDgramsForTrue, dgramsOnDisk, fileLength/float(1<<20)))
 
