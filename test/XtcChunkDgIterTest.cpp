@@ -112,12 +112,12 @@ XtcChunkDgIterTest::XtcChunkDgIterTest ( const std::string& appName )
   if (0 != chmod(m_dirName.c_str(), buf.st_mode)) {
     throw XtcInput::ErrnoException(ERR_LOC, "chmod","trying to change to RW for group and usr");
   }
-  unsigned expNum = 1;
+  std::string expPrefix = "e1";
   unsigned run = 1;
   unsigned stream = 0;
   unsigned chunk = 0;
   bool small = false;
-  m_xtcFileNameFinal = XtcInput::XtcFileName(m_dirName, expNum, run, stream, chunk, small);
+  m_xtcFileNameFinal = XtcInput::XtcFileName(m_dirName, expPrefix, run, stream, chunk, small);
   m_xtcFileNameInProgress = XtcInput::XtcFileName(m_xtcFileNameFinal.path() + ".inprogress");
 }
 
@@ -134,7 +134,7 @@ XtcChunkDgIterTest::~XtcChunkDgIterTest ()
       sleep(1);
       tries += 1;
       boost::filesystem::remove_all(m_dirName, ec);
-      MsgLog("destructor", info, "trying to remove dir, ec=" 
+      MsgLog("destructor", info, "trying to remove dir, ec="
              << ec << " tries=" << tries << " dir=" << m_dirName);
     } while ((boost::system::errc::success != ec) and (tries < 10));
     if (boost::system::errc::success != ec) {
@@ -142,7 +142,7 @@ XtcChunkDgIterTest::~XtcChunkDgIterTest ()
     }
   }
 }
-  
+
 void
 XtcChunkDgIterTest::cleanDir()
 {
@@ -393,7 +393,7 @@ void
 XtcChunkDgIterTest::writer2(int ndg, std::string fileName, std::string finalName, int timeout, std::stack<FileHandleName> &toClean)
 {
   writer1(ndg, fileName, toClean);
-  
+
   sleep(timeout);
   rename(fileName.c_str(), finalName.c_str());
   toClean.pop();

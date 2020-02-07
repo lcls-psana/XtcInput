@@ -74,7 +74,7 @@ namespace XtcInput {
 
 XtcFileName::XtcFileName()
   : m_path()
-  , m_expNum(0)
+  , m_expName()
   , m_run(0)
   , m_stream(0)
   , m_chunk(0)
@@ -83,7 +83,7 @@ XtcFileName::XtcFileName()
 
 XtcFileName::XtcFileName ( const std::string& path )
   : m_path(path)
-  , m_expNum(0)
+  , m_expName()
   , m_run(0)
   , m_stream(0)
   , m_chunk(0)
@@ -133,20 +133,26 @@ XtcFileName::XtcFileName ( const std::string& path )
   name.erase(n) ;
 
   // remaining must be experiment part
-  if ( name.size() < 2 || name[0] != 'e' ) return ;
-  unsigned expNum = _cvt ( name.c_str()+1, stat ) ;
-  if ( not stat ) return ;
+  // In the LCLS2 transition, we made a transition from experiment id to experiment name.
+  // Also, we dropped the e from the file name.
+  // We stick whatever's there as the experiment name; this is used in a couple of places so hopefully not too impactful.
+  // So we could have e665-r0511-s01-c00.smd.xtc or xcsc00118-r0006-s01-c00.xtc
+  // This should take care of both the LCLS1 and LCLS2 cases..
+  if ( name.size() < 2) return ;
+  std::string expName(name.c_str()) ;
 
-  m_expNum = expNum ;
+  MsgLog(logger, trace, "Experiment prefix from path: " << expName);
+
+  m_expName = expName ;
   m_run = run ;
   m_stream = stream ;
   m_chunk = chunk ;
 }
 
-// Construct from dir name, experiment id, run number, stream and chunk
-  XtcFileName::XtcFileName(const std::string& dir, unsigned expNum, unsigned run, unsigned stream, unsigned chunk, bool small)
+// Construct from dir name, experiment prefix, run number, stream and chunk
+  XtcFileName::XtcFileName(const std::string& dir, const std::string& expName, unsigned run, unsigned stream, unsigned chunk, bool small)
   : m_path()
-  , m_expNum(expNum)
+  , m_expName(expName)
   , m_run(run)
   , m_stream(stream)
   , m_chunk(chunk)
@@ -156,11 +162,12 @@ XtcFileName::XtcFileName ( const std::string& path )
   if (not m_path.empty() and m_path[m_path.size()-1] != '/') m_path += "/";
   char buf[64];
   if (small) {
-    snprintf(buf, sizeof buf, "e%u-r%04u-s%02u-c%02u.smd.xtc", expNum, run, stream, chunk);
+    snprintf(buf, sizeof buf, "%s-r%04u-s%02u-c%02u.smd.xtc", expName.c_str(), run, stream, chunk);
   } else {
-    snprintf(buf, sizeof buf, "e%u-r%04u-s%02u-c%02u.xtc", expNum, run, stream, chunk);
+    snprintf(buf, sizeof buf, "%s-r%04u-s%02u-c%02u.xtc", expName.c_str(), run, stream, chunk);
   }
   m_path += buf;
+  MsgLog(logger, trace, "Computed XTC file name path: " << m_path);
 }
 
 // get corresponding large file for a small file
@@ -200,7 +207,7 @@ XtcFileName::basename() const
 }
 
 // get base name for smalldata version of the xtc file (will be the same if small)
-std::string XtcFileName::smallBasename() const 
+std::string XtcFileName::smallBasename() const
 {
   std::string name = basename();
 
@@ -223,7 +230,7 @@ XtcFileName::largeBasename() const
 
   if (not this->small()) return name;
 
-  
+
   // remove .smd from first .smd.xtc
   std::string::size_type n = name.find(smallDataFromFirstDot);
   if ( n == std::string::npos ) {
@@ -263,8 +270,8 @@ XtcFileName::operator<( const XtcFileName& other ) const
   if (m_small and (not other.m_small)) return true ;
   if (other.m_small and (not m_small)) return false ;
 
-  if ( m_expNum < other.m_expNum ) return true ;
-  if ( other.m_expNum < m_expNum ) return false ;
+  if ( m_expName < other.m_expName) return true ;
+  if ( other.m_expName < m_expName ) return false ;
 
   if ( m_run < other.m_run ) return true ;
   if ( other.m_run < m_run ) return false ;

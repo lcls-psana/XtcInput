@@ -44,10 +44,10 @@ namespace XtcInput {
 //----------------
 // Constructors --
 //----------------
-ChunkFileIterLive::ChunkFileIterLive(unsigned expNum, unsigned run, unsigned stream,
-    unsigned liveTimeout, const boost::shared_ptr<LiveFilesDB>& filesdb)
+ChunkFileIterLive::ChunkFileIterLive(const std::string& expName, unsigned run, unsigned stream,
+    unsigned liveTimeout, const boost::shared_ptr<LiveFilesWS>& filesdb)
   : ChunkFileIterI()
-  , m_expNum(expNum)
+  , m_expName(expName)
   , m_run(run)
   , m_stream(stream)
   , m_liveTimeout(liveTimeout)
@@ -77,7 +77,7 @@ ChunkFileIterLive::next()
   XtcFileName fname;
 
   // See if it is in the database
-  std::vector<XtcFileName> files = m_filesdb->files(m_expNum, m_run);
+  std::vector<XtcFileName> files = m_filesdb->files(m_expName, m_run);
   for (std::vector<XtcFileName>::const_iterator it = files.begin(); it != files.end(); ++ it) {
     if (it->stream() == m_stream and int(it->chunk()) == m_chunk) {
       fname = *it;

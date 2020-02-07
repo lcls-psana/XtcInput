@@ -49,13 +49,13 @@ namespace {
 
   const char* logger = "XtcInput.DgramReader";
 
-  void splitIntoXtcFilesAndDatasets(const XtcInput::DgramReader::FileList &fileList, 
-                                    std::vector<XtcInput::XtcFileName> &files, 
+  void splitIntoXtcFilesAndDatasets(const XtcInput::DgramReader::FileList &fileList,
+                                    std::vector<XtcInput::XtcFileName> &files,
                                     std::vector<std::string> &datasets) {
 
     files.clear();
     datasets.clear();
-    for (XtcInput::DgramReader::FileList::const_iterator it = fileList.begin(); 
+    for (XtcInput::DgramReader::FileList::const_iterator it = fileList.begin();
          it != fileList.end(); ++ it) {
       IData::Dataset ds(*it);
       if (ds.isFile()) {
@@ -67,45 +67,45 @@ namespace {
   }
 
   // When this returns, either:
-  //  filenames.size()==0 and datasets.size()==1  
+  //  filenames.size()==0 and datasets.size()==1
   //   or
   // filenames.size()>0 and datasets.size()==0
   // throws exception or prints warning when adjusting lists.
-  void checkAndAdjustInputLists(std::vector<XtcInput::XtcFileName> &filenames, 
+  void checkAndAdjustInputLists(std::vector<XtcInput::XtcFileName> &filenames,
                                 std::vector<std::string> &datasets) {
     if ((filenames.size()==0) and (datasets.size()==0)) {
       throw XtcInput::NoFilesInDataset(ERR_LOC, "");
     }
     if ((filenames.size()>0) and (datasets.size()>0)) {
       MsgLog(logger, warning, "There are both datasets and filenames " <<
-             "specified. Not supported." << std::endl << 
+             "specified. Not supported." << std::endl <<
              " Ignoring filenames, first is " << filenames.at(0));
       filenames.resize(0);
     }
     if (datasets.size() > 1) {
       MsgLog(logger, warning, "There is more than one dataset specified. " <<
-             " Keeping first, and ignoring others, first other is " << 
+             " Keeping first, and ignoring others, first other is " <<
              datasets.at(1));
       datasets.resize(1);
     }
   }
-  
+
   void checkFilenames(std::vector<XtcInput::XtcFileName> &filenames) {
-    std::set<unsigned> expNums;
+    std::set<std::string> expNames;
     std::set<bool> smallData;
-    for (std::vector<XtcInput::XtcFileName>::iterator iter = filenames.begin(); 
+    for (std::vector<XtcInput::XtcFileName>::iterator iter = filenames.begin();
          iter != filenames.end(); ++iter) {
-      expNums.insert(iter->expNum());
+      expNames.insert(iter->expPrefix());
       smallData.insert(iter->small());
     }
-    if (expNums.size()>1) {
+    if (expNames.size()>1) {
       MsgLog(logger, warning, "multiple experiment id's detected in xtc filenames.");
     }
     if (smallData.size()>1) {
       throw XtcInput::MixedSmallInDataset(ERR_LOC, "");
     }
   }
-  
+
 }
 
 //             ----------------------------------------
@@ -143,21 +143,20 @@ try {
     if (ds.exists("one-stream")) {
       throw DeprecatedFeature(ERR_LOC, "one-stream has been deprecated. Use stream=k or read small data");
     }
-    // use default table name if none was given
-    if (m_liveDbConn.empty()) m_liveDbConn = "Server=psdb.slac.stanford.edu;Database=regdb;Uid=regdb_reader";
+    if (m_liveWSConn.empty()) m_liveWSConn = "https://pswww.slac.stanford.edu/ws/lgbk";
     if (ds.exists("live")) {
       liveMode = true;
       std::vector<unsigned> streamsFilterAsVector = ds.streamsAsList();
-      std::set<unsigned> streamsFilter(streamsFilterAsVector.begin(), 
+      std::set<unsigned> streamsFilter(streamsFilterAsVector.begin(),
                                        streamsFilterAsVector.end());
-      boost::shared_ptr<RunFileIterLive> 
+      boost::shared_ptr<RunFileIterLive>
         runFileIterLive(new RunFileIterLive(runNumbers.begin(), runNumbers.end(),
-                                            ds.expID(), streamsFilter,
-                                            m_liveTimeout, m_runLiveTimeout, m_liveDbConn, 
-                                            m_liveTable, ds.dirName(), ds.exists("smd")));
+                                            ds.experiment(), streamsFilter,
+                                            m_liveTimeout, m_runLiveTimeout, m_liveWSConn,
+                                            ds.dirName(), ds.exists("smd")));
       runFileIter = runFileIterLive;
     } else {
-      // dataset specified, but not live mode. 
+      // dataset specified, but not live mode.
       const IData::Dataset::NameList & datasetNameList = ds.files();
       for (IData::Dataset::NameList::const_iterator it = datasetNameList.begin();
            it != datasetNameList.end(); ++it) {
@@ -174,7 +173,7 @@ try {
 
 
   moveDgramsThroughQueue(runFileIter, liveMode);
-  
+
 } catch (const boost::thread_interrupted& ex) {
 
   // we just stop happily, remove all current datagrams from a queue
@@ -182,43 +181,43 @@ try {
   // case someone needs it
   m_queue.clear();
   m_queue.push ( Dgram() ) ;
-  
+
  } catch (const XTCLiveTimeout & ex) {
 
-  // to make user analysis code easier, we catch this exception rather than having 
+  // to make user analysis code easier, we catch this exception rather than having
   // the user catch it.
   m_queue.push ( Dgram() ) ;
   MsgLog(logger, error, "Caught Live Timout Exception. Ending event loop. Exception: " << ex);
 
 } catch ( std::exception& e ) {
-  
+
   // push exception message to a queue which will cause exception in consumer thread
   m_queue.push_exception(e.what());
-  
+
 }
-  
+
   void DgramReader::moveDgramsThroughQueue(boost::shared_ptr<RunFileIterI> runFileIter, bool liveMode) {
 
   if (runFileIter) {
 
-    XtcMergeIterator iter(runFileIter, m_l1OffsetSec, m_firstControlStream, 
+    XtcMergeIterator iter(runFileIter, m_l1OffsetSec, m_firstControlStream,
                           m_maxStreamClockDiffSec, m_thirdEvent);
     if (liveMode) {
       m_liveAvail = boost::make_shared<XtcInput::LiveAvail>(&iter);
     }
     Dgram dg;
     while ( not boost::this_thread::interruption_requested() ) {
-      
+
       dg = iter.next();
-      
+
       // stop if no datagram
       if (dg.empty()) break;
-      
+
       // move it to the queue
       m_queue.push ( dg ) ;
-      
+
     }
-    
+
   } else {
 
     MsgLog(logger, warning, "no input data specified");
@@ -228,6 +227,5 @@ try {
   // tell all we are done
   m_queue.push ( Dgram() ) ;
 }
-  
-} // namespace XtcInput
 
+} // namespace XtcInput

@@ -55,12 +55,12 @@ public:
 
   // Default constructor
   XtcFileName() ;
-  
+
   // Construct from a full path name
   explicit XtcFileName( const std::string& path ) ;
 
-  // Construct from dir name, experiment id, run number, stream, chunk, and if small
-  XtcFileName(const std::string& dir, unsigned expNum, unsigned run, unsigned stream, unsigned chunk, bool small) ;
+  // Construct from dir name, experiment name prefix, run number, stream, chunk, and if small
+  XtcFileName(const std::string& dir, const std::string& expPrefix, unsigned run, unsigned stream, unsigned chunk, bool small) ;
 
   // Destructor
   ~XtcFileName () {}
@@ -89,8 +89,10 @@ public:
   // get file extension, anything that appears after last '.' in file name including '.' itself
   std::string extension() const ;
 
-  // get experiment number
-  unsigned expNum() const { return m_expNum ; }
+  // get experiment name (or experiment id)
+  // So we could get e with the experiment id ( e665-r0511-s01-c00.smd.xtc )
+  // or simple experiment name ( xcsc00118-r0006-s01-c00.xtc )
+  std::string expPrefix() const { return m_expName ; }
 
   // get run number
   unsigned run() const { return m_run ; }
@@ -110,7 +112,7 @@ private:
 
   // Data members
   std::string m_path ;
-  unsigned m_expNum ;
+  std::string m_expName ;
   unsigned m_run ;
   unsigned m_stream ;
   unsigned m_chunk ;

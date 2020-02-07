@@ -23,7 +23,7 @@
 //-------------------------------
 // Collaborating Class Headers --
 //-------------------------------
-#include "XtcInput/LiveFilesDB.h"
+#include "XtcInput/LiveFilesWS.h"
 
 //------------------------------------
 // Collaborating Class Declarations --
@@ -42,7 +42,7 @@ namespace XtcInput {
  *
  *  @brief Implementation of ChunkFileIterI interface which works with live data.
  *
- *  This software was developed for the LCLS project.  If you use all or 
+ *  This software was developed for the LCLS project.  If you use all or
  *  part of it, please give an appropriate acknowledgment.
  *
  *  @version $Id$
@@ -54,8 +54,8 @@ class ChunkFileIterLive : public ChunkFileIterI {
 public:
 
   // Default constructor
-  ChunkFileIterLive (unsigned expNum, unsigned run, unsigned stream,
-      unsigned liveTimeout, const boost::shared_ptr<LiveFilesDB>& filesdb) ;
+  ChunkFileIterLive (const std::string& expName, unsigned run, unsigned stream,
+      unsigned liveTimeout, const boost::shared_ptr<LiveFilesWS>& filesdb) ;
 
   // Destructor
   virtual ~ChunkFileIterLive () ;
@@ -76,11 +76,11 @@ protected:
 
 private:
 
-  unsigned m_expNum;
+  std::string m_expName;
   unsigned m_run;
   unsigned m_stream;
   unsigned m_liveTimeout;
-  boost::shared_ptr<LiveFilesDB> m_filesdb;
+  boost::shared_ptr<LiveFilesWS> m_filesdb;
   int m_chunk;
 };
 
