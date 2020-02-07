@@ -6,7 +6,7 @@
 #  SConscript file for package XtcInput
 #------------------------------------------------------------------------
 
-# Do not delete following line, it must be present in 
+# Do not delete following line, it must be present in
 # SConscript file for any SIT project
 Import('*')
 
@@ -14,7 +14,7 @@ Import('*')
 # For the standard SIT packages which build libraries, applications,
 # and Python modules it is usually sufficient to call
 # standardSConscript() function which defines rules for all
-# above targets. Many standard packages do not need any special options, 
+# above targets. Many standard packages do not need any special options,
 # but those which need can modify standardSConscript() behavior using
 # a number of arguments, here is a complete list:
 #
@@ -29,4 +29,4 @@ Import('*')
 #
 #
 
-standardSConscript(UTESTSEXCL="XtcReadAheadTest XtcFilterTest")
+standardSConscript(UTESTSEXCL="XtcReadAheadTest XtcFilterTest", LIBS="curl")

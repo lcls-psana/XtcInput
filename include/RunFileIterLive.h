@@ -25,7 +25,7 @@
 //-------------------------------
 // Collaborating Class Headers --
 //-------------------------------
-#include "XtcInput/LiveFilesDB.h"
+#include "XtcInput/LiveFilesWS.h"
 #include "IData/Dataset.h"
 
 //------------------------------------
@@ -45,7 +45,7 @@ namespace XtcInput {
  *
  *  @brief Implementation of RunFileIterI interface working with live data.
  *
- *  This software was developed for the LCLS project.  If you use all or 
+ *  This software was developed for the LCLS project.  If you use all or
  *  part of it, please give an appropriate acknowledgment.
  *
  *  @version $Id$
@@ -63,29 +63,28 @@ public:
    *
    *  @param[in] begin     Iterator pointing to the beginning of run number sequence
    *  @param[in] end       Iterator pointing to the end of run number sequence
-   *  @param[in] expNum    Experiment number
+   *  @param[in] expName    Experiment name
    *  @param[in] streamsFilter A ranges of streams (empty means all streams)
    *  @param[in] liveTimeout Specifies timeout in second when reading live data
    *  @param[in] runLiveTimeout Specifies timeout in second when waiting for a new run to show in the database when reading live data
-   *  @param[in] dbConnStr Database connection string
-   *  @param[in] table     Database table name
+   *  @param[in] wsConnStr Web service connection string
    *  @param[in] dir       Directory to look for live files
    *  @param[in] small     look for small data files
    */
   template <typename Iter>
-    RunFileIterLive (Iter begin, Iter end, unsigned expNum, 
-                     const std::set<unsigned> &streamsFilter, 
+    RunFileIterLive (Iter begin, Iter end, const std::string& expName,
+                     const std::set<unsigned> &streamsFilter,
                      unsigned liveTimeout, unsigned runLiveTimeout,
-                     const std::string& dbConnStr, const std::string& table, 
+                     const std::string& wsConnStr,
                      const std::string& dir, bool small)
     : RunFileIterI()
     , m_runs(begin, end)
-    , m_expNum(expNum)
+    , m_expName(expName)
     , m_streamsFilter(streamsFilter)
     , m_liveTimeout(liveTimeout)
     , m_runLiveTimeout(runLiveTimeout)
     , m_run(0)
-    , m_filesdb(boost::make_shared<LiveFilesDB>(dbConnStr, table, dir, small))
+    , m_filesdb(boost::make_shared<LiveFilesWS>(wsConnStr, dir, small))
   {
   }
 
@@ -109,12 +108,12 @@ protected:
 private:
 
   std::set<unsigned> m_runs;
-  unsigned m_expNum;
+  std::string m_expName;
   std::set<unsigned> m_streamsFilter;
   unsigned m_liveTimeout;
   unsigned m_runLiveTimeout;
   unsigned m_run;
-  boost::shared_ptr<LiveFilesDB> m_filesdb;
+  boost::shared_ptr<LiveFilesWS> m_filesdb;
 };
 
 } // namespace XtcInput

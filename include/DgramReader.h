@@ -65,18 +65,17 @@ public:
   // full constructor with parameters for handling control streams and optionally
   // specifies file offsets before the second event (event after configure).
   template <typename Iter>
-    DgramReader(Iter begin, Iter end, DgramQueue& queue, 
+    DgramReader(Iter begin, Iter end, DgramQueue& queue,
                 boost::shared_ptr<XtcInput::LiveAvail> &liveAvail,
-                MergeMode mode, const std::string& liveDbConn, const std::string& liveTable, 
-                unsigned liveTimeout, unsigned runLiveTimeout, double l1OffsetSec, 
+                MergeMode mode, const std::string& liveWSConn,
+                unsigned liveTimeout, unsigned runLiveTimeout, double l1OffsetSec,
                 int firstControlStream, unsigned maxStreamClockDiffSec,
-                boost::shared_ptr<XtcFilesPosition> thirdEvent = 
+                boost::shared_ptr<XtcFilesPosition> thirdEvent =
                                 boost::shared_ptr<XtcFilesPosition>())
     : m_files(begin, end)
     , m_queue( queue )
     , m_mode( mode )
-    , m_liveDbConn(liveDbConn)
-    , m_liveTable(liveTable)
+    , m_liveWSConn(liveWSConn)
     , m_liveTimeout(liveTimeout)
     , m_runLiveTimeout(runLiveTimeout)
     , m_l1OffsetSec(l1OffsetSec)
@@ -89,13 +88,12 @@ public:
   // constructor with default parameters for parameters for handling control streams
   template <typename Iter>
   DgramReader(Iter begin, Iter end, DgramQueue& queue, MergeMode mode,
-              const std::string& liveDbConn, const std::string& liveTable, unsigned liveTimeout,
+              const std::string& liveWSConn, unsigned liveTimeout,
               unsigned runLiveTimeout, double l1OffsetSec=0)
     : m_files(begin, end)
     , m_queue( queue )
     , m_mode( mode )
-    , m_liveDbConn(liveDbConn)
-    , m_liveTable(liveTable)
+    , m_liveWSConn(m_liveWSConn)
     , m_liveTimeout(liveTimeout)
     , m_runLiveTimeout(runLiveTimeout)
     , m_l1OffsetSec(l1OffsetSec)
@@ -120,8 +118,7 @@ private:
   DgramQueue& m_queue ;
   size_t m_maxDgSize ;
   MergeMode m_mode ;
-  std::string m_liveDbConn;
-  std::string m_liveTable;
+  std::string m_liveWSConn;
   unsigned m_liveTimeout;
   unsigned m_runLiveTimeout;
   double m_l1OffsetSec ;

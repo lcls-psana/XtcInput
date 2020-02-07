@@ -35,8 +35,8 @@
 namespace {
 
   const char * logger = "StreamAvail";
-  
-  std::string  
+
+  std::string
   stripInProgress(const XtcInput::XtcFileName &xtcFileName) {
     std::string path = xtcFileName.path();
     if (xtcFileName.extension() == ".inprogress") {
@@ -118,14 +118,14 @@ unsigned StreamAvail::countUpTo(const XtcFileName &xtcFileName, off_t offset, un
     std::pair<unsigned, unsigned> streamNextChunk(xtcFileName.stream(), 1 + xtcFileName.chunk());
     if (m_streamChunk2counter.find(streamNextChunk) == m_streamChunk2counter.end()) {
       XtcFileName nextXtc = XtcFileName(getDir(xtcFileName),
-                                        xtcFileName.expNum(),
+                                        xtcFileName.expPrefix(),
                                         xtcFileName.run(),
                                         streamNextChunk.first,
-                                        streamNextChunk.second, 
+                                        streamNextChunk.second,
                                         xtcFileName.small());
       int fid = tryToOpen(nextXtc, *m_fileIO);
       if (fid < 0) return availThisChunk;
-      MsgLog(logger, TRACEMSG, "At chunk boundary. Counting available for " 
+      MsgLog(logger, TRACEMSG, "At chunk boundary. Counting available for "
              << xtcFileName << ", will also try " << nextXtc);
       m_openFileDescriptors.push_back(fid);
       L1AcceptOffsetsFollowingFunctor nextCounter(fid, m_fileIO);

@@ -24,7 +24,7 @@
 //-------------------------------
 // Collaborating Class Headers --
 //-------------------------------
-#include "XtcInput/LiveFilesDB.h"
+#include "XtcInput/LiveFilesWS.h"
 #include "IData/Dataset.h"
 
 //------------------------------------
@@ -44,7 +44,7 @@ namespace XtcInput {
  *
  *  @brief Implementation of StreamFileIterI interface which works with live data.
  *
- *  This software was developed for the LCLS project.  If you use all or 
+ *  This software was developed for the LCLS project.  If you use all or
  *  part of it, please give an appropriate acknowledgment.
  *
  *  @version $Id$
@@ -58,15 +58,15 @@ public:
   /**
    *  @brief Make iterator instance.
    *
-   *  @param[in] expNum    Experiment number
+   *  @param[in] expName    Experiment name
    *  @param[in] run       Run number
    *  @param[in] streamsFilter list of streams to process (empty means all associated with run)
    *  @param[in] liveTimeout Timeout in second to wait for live data
    *  @param[in] runLiveTimeOut Timeout in seconds to wait for a new run
    *  @param[in] filesdb   Database connection
    */
-  StreamFileIterLive (unsigned expNum, unsigned run, const std::set<unsigned> &streamsFilter, unsigned liveTimeout, unsigned runLiveTimeOut,
-      const boost::shared_ptr<LiveFilesDB>& filesdb) ;
+  StreamFileIterLive (const std::string& expName, unsigned run, const std::set<unsigned> &streamsFilter, unsigned liveTimeout, unsigned runLiveTimeOut,
+      const boost::shared_ptr<LiveFilesWS>& filesdb) ;
 
   // Destructor
   virtual ~StreamFileIterLive () ;
@@ -87,11 +87,11 @@ protected:
 
 private:
 
-  unsigned m_expNum;
+  std::string m_expName;
   unsigned m_run;
   unsigned m_liveTimeout;
   unsigned m_runLiveTimeout;
-  boost::shared_ptr<LiveFilesDB> m_filesdb;
+  boost::shared_ptr<LiveFilesWS> m_filesdb;
   bool m_initialized;
   unsigned m_lastStream;
   std::set<unsigned> m_streamsFilter, m_streamsToProcess;
