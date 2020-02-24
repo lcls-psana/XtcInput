@@ -45,7 +45,7 @@ namespace XtcInput {
  *
  *  @brief Implementation of RunFileIterI interface working with live data.
  *
- *  This software was developed for the LCLS project.  If you use all or
+ *  This software was developed for the LCLS project.  If you use all or 
  *  part of it, please give an appropriate acknowledgment.
  *
  *  @version $Id$
@@ -63,7 +63,7 @@ public:
    *
    *  @param[in] begin     Iterator pointing to the beginning of run number sequence
    *  @param[in] end       Iterator pointing to the end of run number sequence
-   *  @param[in] expName    Experiment name
+   *  @param[in] expNum    Experiment number
    *  @param[in] streamsFilter A ranges of streams (empty means all streams)
    *  @param[in] liveTimeout Specifies timeout in second when reading live data
    *  @param[in] runLiveTimeout Specifies timeout in second when waiting for a new run to show in the database when reading live data
@@ -73,14 +73,14 @@ public:
    *  @param[in] small     look for small data files
    */
   template <typename Iter>
-    RunFileIterLive (Iter begin, Iter end, const std::string& expName,
-                     const std::set<unsigned> &streamsFilter,
+    RunFileIterLive (Iter begin, Iter end, unsigned expNum, 
+                     const std::set<unsigned> &streamsFilter, 
                      unsigned liveTimeout, unsigned runLiveTimeout,
-                     const std::string& dbConnStr, const std::string& table,
+                     const std::string& dbConnStr, const std::string& table, 
                      const std::string& dir, bool small)
     : RunFileIterI()
     , m_runs(begin, end)
-    , m_expName(expName)
+    , m_expNum(expNum)
     , m_streamsFilter(streamsFilter)
     , m_liveTimeout(liveTimeout)
     , m_runLiveTimeout(runLiveTimeout)
@@ -109,7 +109,7 @@ protected:
 private:
 
   std::set<unsigned> m_runs;
-  std::string m_expName;
+  unsigned m_expNum;
   std::set<unsigned> m_streamsFilter;
   unsigned m_liveTimeout;
   unsigned m_runLiveTimeout;

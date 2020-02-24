@@ -50,7 +50,7 @@ namespace XtcInput {
 //----------------
 // Constructors --
 //----------------
-LiveFilesDB::LiveFilesDB (const std::string& connStr, const std::string& table,
+LiveFilesDB::LiveFilesDB (const std::string& connStr, const std::string& table, 
                           const std::string& dir, bool small)
   : m_conn(connStr)
   , m_table(table)
@@ -94,8 +94,8 @@ LiveFilesDB::files(unsigned expId, unsigned run)
   // +----------+-----+--------+-------+---------------------+---------------+--------------------------------------------+
   // | exper_id | run | stream | chunk | open                | host          | dirpath                                    |
   // +----------+-----+--------+-------+---------------------+---------------+--------------------------------------------+
-  // |      573 |  69 |     80 |     0 | 1425567558412694000 | ioc-fee-rec02 | /reg/d/cameras/ioc-fee-rec02/daq/xtc/e573-r0069-s80-c00.xtc      |
-  // |      575 |   1 |      0 |     0 | 1425498200940395664 | daq-cxi-dss01 | /u2/pcds/pds/cxi/e575/e575-r0001-s00-c00.xtc                     |
+  // |      573 |  69 |     80 |     0 | 1425567558412694000 | ioc-fee-rec02 | /reg/d/cameras/ioc-fee-rec02/daq/xtc/e573-r0069-s80-c00.xtc      | 
+  // |      575 |   1 |      0 |     0 | 1425498200940395664 | daq-cxi-dss01 | /u2/pcds/pds/cxi/e575/e575-r0001-s00-c00.xtc                     | 
   //
   // that is, the experiment id, run, stream, chunk, and a dirpath - for where the DAQ is writing the files.
   // This table only records the large xtc files - not the .smd.xtc files
@@ -103,7 +103,7 @@ LiveFilesDB::files(unsigned expId, unsigned run)
   std::string qstr = "SELECT stream, chunk, dirpath FROM ? WHERE exper_id = ?? AND run = ??";
   std::auto_ptr<RdbMySQL::Result> res(q.executePar(qstr, m_table, expId, run));
 
-  MsgLog(logger, error, "LiveFilesDB::files - querying le database for expId=" << expId << " run=" << run);
+  MsgLog(logger, debug, "LiveFilesDB::files - querying database for expId=" << expId << " run=" << run);
 
   RdbMySQL::RowIter iter(*res);
   while (iter.next()) {
@@ -117,7 +117,7 @@ LiveFilesDB::files(unsigned expId, unsigned run)
 
     if (dssPath.empty()) {
       XtcFileName fname(m_dir, expId, run, stream, chunk, m_small);
-      MsgLog(logger, debug, "LiveFilesDB::files - database entry found for stream=" << stream
+      MsgLog(logger, debug, "LiveFilesDB::files - database entry found for stream=" << stream 
              << " chunk=" << chunk << ", but no dss path. Using dir & small parameters, "
              << " adding expected file from mover: " << fname.path());
       result.push_back(fname);
@@ -132,7 +132,7 @@ LiveFilesDB::files(unsigned expId, unsigned run)
       fs::path path(m_dir);
       path /= fs::path(xtcBaseName.path());
       XtcFileName fname(path.string());
-      MsgLog(logger, debug, "LiveFilesDB::files - database entry found for stream=" << stream
+      MsgLog(logger, debug, "LiveFilesDB::files - database entry found for stream=" << stream 
              << " chunk=" << chunk << " with dssPath. Using dir & small parametes, "
              << " adding expcted file from mover: " << fname.path());
       result.push_back(fname);
@@ -141,5 +141,5 @@ LiveFilesDB::files(unsigned expId, unsigned run)
   }
   return result;
 }
-
+  
 } // namespace XtcInput
