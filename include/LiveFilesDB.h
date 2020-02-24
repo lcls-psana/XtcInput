@@ -1,12 +1,12 @@
-#ifndef XTCINPUT_LIVEFILESWS_H
-#define XTCINPUT_LIVEFILESWS_H
+#ifndef XTCINPUT_LIVEFILESDB_H
+#define XTCINPUT_LIVEFILESDB_H
 
 //--------------------------------------------------------------------------
 // File and Version Information:
 // 	$Id$
 //
 // Description:
-//	Class LiveFilesWS.
+//	Class LiveFilesDB.
 //
 //------------------------------------------------------------------------
 
@@ -24,6 +24,7 @@
 //-------------------------------
 // Collaborating Class Headers --
 //-------------------------------
+#include "RdbMySQL/Conn.h"
 #include "XtcInput/XtcFileName.h"
 
 //------------------------------------
@@ -43,7 +44,7 @@ namespace XtcInput {
  *
  *  @brief Class which implements interface to migration database
  *
- *  This software was developed for the LCLS project.  If you use all or
+ *  This software was developed for the LCLS project.  If you use all or 
  *  part of it, please give an appropriate acknowledgment.
  *
  *  @version $Id$
@@ -51,20 +52,21 @@ namespace XtcInput {
  *  @author Andy Salnikov
  */
 
-class LiveFilesWS : boost::noncopyable {
+class LiveFilesDB : boost::noncopyable {
 public:
 
   /**
    *  @brief Make an instance
    *
-   *  @param[in] wsURL    The web service endpoint.
+   *  @param[in] connStr  Connection string.
+   *  @param[in] table    Table name
    *  @param[in] dir      Directory to look for live large xtc files
    *  @param[in] small    return filepaths for small xtc files: add 'smalldata' to dir, and use suffix .smd.xtc
    */
-  LiveFilesWS(const std::string& wsURL, const std::string& dir, bool small);
+  LiveFilesDB(const std::string& connStr, const std::string& table, const std::string& dir, bool small);
 
   // Destructor
-  ~LiveFilesWS () ;
+  ~LiveFilesDB () ;
 
   /**
    *  @brief Returns the list of files for given run. Constructor arguments dir and small affect paths returned
@@ -72,13 +74,14 @@ public:
    *  @param[in] expId    Experiment id
    *  @param[in] run      Run number
    */
-  std::vector<XtcFileName> files(const std::string& expName, unsigned run);
+  std::vector<XtcFileName> files(unsigned expId, unsigned run);
 
 protected:
 
 private:
 
-  std::string m_wsURL;          ///< The web service endpoint URL
+  RdbMySQL::Conn m_conn;      ///< Connection to mysql database
+  const std::string m_table;  ///< Name of the table containing file list
   std::string m_dir;          ///< Directory to look for live large files
   bool m_small;               ///< return filepaths for small xtc files: add 'smalldata' to dir, and use suffix .smd.xtc
 
@@ -86,4 +89,4 @@ private:
 
 } // namespace XtcInput
 
-#endif // XTCINPUT_LIVEFILESWS_H
+#endif // XTCINPUT_LIVEFILESDB_H

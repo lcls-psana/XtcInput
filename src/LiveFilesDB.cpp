@@ -3,7 +3,7 @@
 // 	$Id$
 //
 // Description:
-//	Class LiveFilesWS...
+//	Class LiveFilesDB...
 //
 // Author List:
 //      Andy Salnikov
@@ -13,7 +13,7 @@
 //-----------------------
 // This Class's Header --
 //-----------------------
-#include "XtcInput/LiveFilesWS.h"
+#include "XtcInput/LiveFilesDB.h"
 
 //-----------------
 // C/C++ Headers --
@@ -24,6 +24,10 @@
 // Collaborating Class Headers --
 //-------------------------------
 #include "MsgLogger/MsgLogger.h"
+#include "RdbMySQL/Query.h"
+#include "RdbMySQL/Result.h"
+#include "RdbMySQL/Row.h"
+#include "RdbMySQL/RowIter.h"
 
 //-----------------------------------------------------------------------
 // Local Macros, Typedefs, Structures, Unions and Forward Declarations --
@@ -33,7 +37,7 @@ namespace fs = boost::filesystem;
 
 namespace {
 
-  const char* logger = "XtcInput.LiveFilesWS";
+  const char* logger = "XtcInput.LiveFilesDB";
 
 }
 
@@ -46,8 +50,10 @@ namespace XtcInput {
 //----------------
 // Constructors --
 //----------------
-LiveFilesWS::LiveFilesWS (const std::string& wsURL, const std::string& dir, bool small)
-  : m_wsURL(wsURL)
+LiveFilesDB::LiveFilesDB (const std::string& connStr, const std::string& table,
+                          const std::string& dir, bool small)
+  : m_conn(connStr)
+  , m_table(table)
   , m_dir(dir)
   , m_small(small)
 {
@@ -61,7 +67,7 @@ LiveFilesWS::LiveFilesWS (const std::string& wsURL, const std::string& dir, bool
 //--------------
 // Destructor --
 //--------------
-LiveFilesWS::~LiveFilesWS ()
+LiveFilesDB::~LiveFilesDB ()
 {
 }
 
@@ -72,7 +78,7 @@ LiveFilesWS::~LiveFilesWS ()
  *  @param[in] run      Run number
  */
 std::vector<XtcFileName>
-LiveFilesWS::files(const std::string& expName, unsigned run)
+LiveFilesDB::files(unsigned expId, unsigned run)
 {
   std::vector<XtcFileName> result;
 
@@ -81,6 +87,7 @@ LiveFilesWS::files(const std::string& expName, unsigned run)
     return result;
   }
 
+  // build query
   RdbMySQL::Query q(m_conn);
 
   // The file table that we are reading contains records like
@@ -96,7 +103,7 @@ LiveFilesWS::files(const std::string& expName, unsigned run)
   std::string qstr = "SELECT stream, chunk, dirpath FROM ? WHERE exper_id = ?? AND run = ??";
   std::auto_ptr<RdbMySQL::Result> res(q.executePar(qstr, m_table, expId, run));
 
-  MsgLog(logger, error, "LiveFilesWS::files - querying le database for expId=" << expId << " run=" << run);
+  MsgLog(logger, error, "LiveFilesDB::files - querying le database for expId=" << expId << " run=" << run);
 
   RdbMySQL::RowIter iter(*res);
   while (iter.next()) {
@@ -110,7 +117,7 @@ LiveFilesWS::files(const std::string& expName, unsigned run)
 
     if (dssPath.empty()) {
       XtcFileName fname(m_dir, expId, run, stream, chunk, m_small);
-      MsgLog(logger, debug, "LiveFilesWS::files - database entry found for stream=" << stream
+      MsgLog(logger, debug, "LiveFilesDB::files - database entry found for stream=" << stream
              << " chunk=" << chunk << ", but no dss path. Using dir & small parameters, "
              << " adding expected file from mover: " << fname.path());
       result.push_back(fname);
@@ -125,7 +132,7 @@ LiveFilesWS::files(const std::string& expName, unsigned run)
       fs::path path(m_dir);
       path /= fs::path(xtcBaseName.path());
       XtcFileName fname(path.string());
-      MsgLog(logger, debug, "LiveFilesWS::files - database entry found for stream=" << stream
+      MsgLog(logger, debug, "LiveFilesDB::files - database entry found for stream=" << stream
              << " chunk=" << chunk << " with dssPath. Using dir & small parametes, "
              << " adding expcted file from mover: " << fname.path());
       result.push_back(fname);
