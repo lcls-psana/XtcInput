@@ -29,4 +29,4 @@ Import('*')
 #
 #
 
-standardSConscript(UTESTSEXCL="XtcReadAheadTest XtcFilterTest", LIBS="curl", CCFLAGS="-std=c++0x", LIBS="pthread")
+standardSConscript(UTESTSEXCL="XtcReadAheadTest XtcFilterTest", LIBS=["curl", "pthread"], CCFLAGS="-std=c++0x")
