@@ -104,6 +104,7 @@ LiveFilesWS::files(const std::string& expName, unsigned run)
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &__LiveFilesWS_callback__);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &sresp);
         curl_easy_setopt(curl, CURLOPT_URL, acturl.c_str());
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         //curl_easy_setopt(curl, CURLOPT_TRANSFERTEXT, 1L);
 
         sresp.clear();
