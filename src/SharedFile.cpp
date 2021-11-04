@@ -29,6 +29,8 @@
 // Local Macros, Typedefs, Structures, Unions and Forward Declarations --
 //-----------------------------------------------------------------------
 
+static bool debug_print=true;
+
 namespace {
 
 #define MSGLOGLVL debug
@@ -153,9 +155,12 @@ SharedFile::read(char* buf, size_t size)
       off_t bytesNextRead = std::min(off_t(left), (m_impl->lastFileLength) - readFromOffset);
       ssize_t nread = ::read(m_impl->fd, buf+(size-left), size_t(bytesNextRead));
       if ((nread >= 0) and (nread != bytesNextRead)) {
-        MsgLog(logger, error, "system read from file " << m_impl->path 
-               << " returned only " << nread << " even though it appears that " 
-               << bytesNextRead << " bytes are available by looking at file length");
+        if (debug_print) {
+            MsgLog(logger, error, "system read from file " << m_impl->path
+                   << " returned only " << nread << " even though it appears that "
+                   << bytesNextRead << " bytes are available by looking at file length.  Throttling future error messages.");
+            debug_print=false;
+        }
       }
       if (nread > 0) {
         MsgLog(logger, MSGLOGLVL, "read " << nread << " bytes");
