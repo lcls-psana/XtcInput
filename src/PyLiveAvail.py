@@ -1,5 +1,6 @@
-from __future__ import division
-from past.utils import old_div
+#from __future__ import division
+#from past.utils import old_div
+
 import sys
 import os
 import io
@@ -341,10 +342,9 @@ class LiveAvail(object):
 
         if self._debug:
             bytesOnDisk = fileLength - self._examinedDaqStreamInfo['last_off']
-            dgramsOnDisk = old_div(bytesOnDisk,self._examinedDaqStreamInfo['dgramsize'])
+            #dgramsOnDisk = old_div(bytesOnDisk,self._examinedDaqStreamInfo['dgramsize'])
+            dgramsOnDisk = bytesOnDisk / self._examinedDaqStreamInfo['dgramsize']
             self.debugmsg("event=%d toFarBehind()=%d (based on eventLag=%d or dgrams_this_stream=%d)dgramsOnDisk=%.1f filelength=%.2f mb" % \
                           (self._eventNumber, result, self._eventLag, numDgramsForTrue, dgramsOnDisk, fileLength/float(1<<20)))
 
         return result
-
-
