@@ -11,12 +11,20 @@ Package author: Andrei Salnikov
 Please describe any modifications that you made to the package in the
 reverse time order.
 
+Tag: V01-00-02
+2023-12-12 Mikhail Dubrovin
+- get rid of past in from past.utils import old_div
+
+Tag: V01-00-01 ???
+Tag: V01-00-00 ???
+Tag: V00-11-00 ???
+Tag: V00-10-32 ???
 
 Tag: V00-10-28
 2016-11-10 David Schneider
 - when a control stream emits two datagrams with the same timestamp, throw out both. Used
   to keep the first, but we're not always sure if we can trust either timestamp.
-  
+
 Tag: V00-10-27
 2016-09-20 David Schneider
 - make unit test runnable as standalone script
