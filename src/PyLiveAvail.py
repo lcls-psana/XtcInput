@@ -9,8 +9,8 @@ import math
 from XtcInput.PyDgramListUtil import xtcFileNameStreamChunk, getDgramInfo
 
 class LiveAvail(object):
-    '''psana module to find out how far behind psana is from the live events 
-    being written to disk. 
+    '''psana module to find out how far behind psana is from the live events
+    being written to disk.
 
     To use LiveAvail, an instance of the class must be passed to the DataSource
     module list. Example:
@@ -24,12 +24,12 @@ class LiveAvail(object):
         for evt in ds.events():
             if liveAvail.toFarBehind(): continue
             # process event
-    
-    The method toFarBehind() will return True when reading live data, and the most 
+
+    The method toFarBehind() will return True when reading live data, and the most
     recent event obtained appears to be far behind the most recent events available
     on disk.
 
-    If one is not in live mode, or in live mode but reading files that have been 
+    If one is not in live mode, or in live mode but reading files that have been
     completely written to disk, toFarBehind() always returns False.
 
     The steps are:
@@ -48,12 +48,12 @@ class LiveAvail(object):
     '''
     def __init__(self, eventLag='medium',  # can be 'short' or 'long'
                  eventLagInEvents=None,    # in number of events
-                 trace=False, 
-                 debug=False, 
+                 trace=False,
+                 debug=False,
                  eventsForStats = 60):
         '''allows one to skip events to keep up with live data
-        
-        The default is to return True only when one gets within 250 events of the end 
+
+        The default is to return True only when one gets within 250 events of the end
         (which is about 2 seconds at 120hz). It is reccommended to use the eventLag
         parameter - 'medium', 'short' or 'long'. Although one can specify eventLagInEvents
         directly, it is easy to skip too many events. One should not expect 120 writes
@@ -61,7 +61,7 @@ class LiveAvail(object):
         a time. keeping up with the most recent event would mean skipping 59 out of 60 events.
 
         ARGS:
-          
+
           eventLag (str): one of 'medium' 250 events ~ 2 seconds, default
                                  'short'  130 events ~ 1 second
                                  'long'   500 events ~ 4 seconds
@@ -81,7 +81,7 @@ class LiveAvail(object):
         # _psanaInternalStreamBufferLen is the length of the internal buffer
         # that psana maintains for each stream. Psana does not deliver any events
         # to the user until each of these stream buffer contains at least this many
-        # events. 
+        # events.
         self._psanaInternalStreamBufferLen = 20
 
         assert eventLag in ['medium', 'short','long'], \
@@ -97,7 +97,7 @@ class LiveAvail(object):
                 self._eventLag = 130
             elif eventLag == 'long':
                 self.__eventLag = 500
-                
+
         self._eventsForStats = eventsForStats
         self._debug = debug
         self._trace = trace or debug
@@ -119,7 +119,7 @@ class LiveAvail(object):
         if self._examinedDaqStreamInfo is None:
             return
         fh = self._examinedDaqStreamInfo['fileobj']
-        if fh is None: 
+        if fh is None:
             return
         if not fh.closed:
             self.tracemsg("__del__: closing open filehandle for %s" % \
@@ -146,10 +146,10 @@ class LiveAvail(object):
         ARGS:
           file2offset: result of parsing psana.DgramList from beginrun
 
-        RET: tuple of two items. If there is an error parsing, 
+        RET: tuple of two items. If there is an error parsing,
              returns None, None, otherwise the two objects:
 
-          inProgressDaqStreams    - dict, keys: streams < 80 
+          inProgressDaqStreams    - dict, keys: streams < 80
                                           values: xtcfilenames ending with .inprogress
           notInProgressDaqStreams - set,  streams < 80 where filename did not end with
                                           .inprogress
@@ -183,9 +183,9 @@ class LiveAvail(object):
             return
 
         inProgressDaqStreams, notInProgressDaqStreams = self._identifyInProgressDaqStreams(file2offset)
-        if inProgressDaqStreams is None: 
+        if inProgressDaqStreams is None:
             return
-        
+
         if len(inProgressDaqStreams)>0 and len(notInProgressDaqStreams)>0:
             self.errormsg("beginrun: there is a mix of .inprogress files, "
                           "and not in progress files. Very unexpected. "
@@ -197,7 +197,7 @@ class LiveAvail(object):
                          "Chunk 0 files must all be on disk. "
                          "Will assume NOT live mode. liveAvail will always return False.")
             return
-            
+
         self._examinedDaqStream = min(inProgressDaqStreams.keys())
         fname = inProgressDaqStreams[self._examinedDaqStream]
         stream, chunk = xtcFileNameStreamChunk(fname)
@@ -236,7 +236,7 @@ class LiveAvail(object):
         fname2offset = getDgramInfo(evt)
         if fname2offset is None:
             self.errormsg("dglist is None in event %d" % self.eventNumber)
-            return 
+            return
 
         for fname, offset in fname2offset.items():
             stream, chunk = xtcFileNameStreamChunk(fname)
@@ -286,8 +286,8 @@ class LiveAvail(object):
                     self._doLiveAvail = False
         self.tracemsg("changed chunk. fname=%s chunk=%d offset=%d" % \
                       (fname, chunk, offset))
-            
-                           
+
+
     def _updateStreamInfoSameChunk(self, streamInfo, offset):
         if streamInfo['last_off'] == 0:
             streamInfo['last_off'] = offset
@@ -311,7 +311,7 @@ class LiveAvail(object):
         if not self._beginRunCalled:
             self.errormsg("beginrun not called. Is module in DataSource module= list?")
             return False
-        
+
         if not self._doLiveAvail:
             return False
 
@@ -327,9 +327,9 @@ class LiveAvail(object):
         assert self._examinedDaqStreamInfo['num_complete_dgrams'] > 0
         numDgramsToGetPastPsanaBuffer = 1  # for the current event, offset was the start of it
         numDgramsToGetPastPsanaBuffer += self._psanaInternalStreamBufferLen
-        
+
         numInEachDaqStream = int(math.ceil(self._eventLag/float(self._totalNumberOfDaqStreams)))
-        
+
         numDgramsForTrue = numInEachDaqStream + numDgramsToGetPastPsanaBuffer
         bytesFromLastOffsetForTrue = int(math.ceil(numDgramsForTrue * self._examinedDaqStreamInfo['dgramsize']))
 
@@ -346,6 +346,5 @@ class LiveAvail(object):
                           (self._eventNumber, result, self._eventLag, numDgramsForTrue, dgramsOnDisk, fileLength/float(1<<20)))
 
         return result
-            
-        
+
 
